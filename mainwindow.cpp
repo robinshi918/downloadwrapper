@@ -63,10 +63,15 @@ void MainWindow::init()
     ui->playListOptionGroup->setVisible(false);
     ui->startEdit->setText("");
     ui->endEdit->setText("");
-
     ui->urlEdit->setText("https://www.youtube.com/watch?v=l11mUSu7aeA");
+    ui->cancelButton->setEnabled(false);
 
-//    qInfo() << "MainWindow::init()";
+    connect(&p, SIGNAL(readyReadStandardOutput()),
+            this, SLOT(readSubProcess()));
+    connect(&p, SIGNAL(readyReadStandardError()),
+            this, SLOT(readSubProcess()));
+    connect(&p, SIGNAL(finished(int, QProcess::ExitStatus)),
+            this, SLOT(commandFinished(int, QProcess::ExitStatus)));
 }
 
 void MainWindow::downloadPlayList(QString &url, unsigned int startPos, unsigned int endPos)
@@ -76,31 +81,19 @@ void MainWindow::downloadPlayList(QString &url, unsigned int startPos, unsigned 
 
 void MainWindow::downloadSingle(QString &url)
 {
-    QStringList arguments{"-icw", "--extract-audio",  "--audio-format", "mp3", "--output","'/Users/robinshi/Desktop/QtTest/mp3/%(title)s.%(ext)s'",  url};
-//    qInfo() << arguments;
-
+    QStringList arguments{"-icw", "--extract-audio",  "--audio-format", "mp3", "--output","/Users/robinshi/Desktop/QtTest/mp3/%(title)s.%(ext)s",  url};
     QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
         env.insert("PATH", env.value("PATH") + ":/usr/local/opt/openjdk/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/share/dotnet:~/.dotnet/tools:/Library/Apple/usr/bin:/Users/robinshi/Library/Android/sdk/platform-tools/");
-//        env.insert("PATH", env.value("PATH") + ":/opt/local/sbin");
         p.setProcessEnvironment(env);
 
-
-
     p.start("/usr/local/bin/youtube-dl", arguments);
-
-    connect(&p, SIGNAL(readyReadStandardOutput()),
-            this, SLOT(readSubProcess()));
-    connect(&p, SIGNAL(readyReadStandardError()),
-            this, SLOT(readSubProcess()));
-
-
 }
 
 void MainWindow::addToOutput(QString str)
 {
     if (!str.isEmpty()) {
         QString labelContent = ui->outputLabel->text();
-        ui->outputLabel->setText(labelContent + str);
+        ui->outputLabel->setText(str + "\n" + labelContent);
     }
 }
 
@@ -108,10 +101,25 @@ void MainWindow::readSubProcess() {
     QString stdout = p.readAllStandardOutput();
     QString stderr = p.readAllStandardError();
 
-    qInfo() << stdout;
-    qInfo() << stderr;
-    addToOutput(stdout);
-    addToOutput(stderr);
+    if (stdout.size() > 0) {
+        qInfo() << stdout;
+        addToOutput(stdout);
+    }
+
+    if (stderr.size() > 0) {
+        qInfo() << stderr;
+        addToOutput(stderr);
+    }
+}
+
+void MainWindow::commandFinished(int exitCode, QProcess::ExitStatus exitStatus) {
+    qInfo() << "finished " << exitCode;
+    if (exitCode == 0) {
+        addToOutput("\n###### Download Successful!!! #####\n\n");
+    } else {
+        addToOutput("###### Download Failed!!! #####\n\n");
+    }
+
 }
 
 

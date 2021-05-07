@@ -35,6 +35,7 @@ private:
 
 private slots:
     void readSubProcess(void);
+    void commandFinished(int exitCode, QProcess::ExitStatus exitStatus);
 
 };
 #endif // MAINWINDOW_H

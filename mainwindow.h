@@ -33,6 +33,9 @@ private:
 
     void addToOutput(QString str);
 
+
+    void injectEnvironmentVar();
+
 private slots:
     void readSubProcess(void);
     void commandFinished(int exitCode, QProcess::ExitStatus exitStatus);

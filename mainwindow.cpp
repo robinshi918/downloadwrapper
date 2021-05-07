@@ -42,8 +42,13 @@ void MainWindow::handleStartButton()
     QString url = ui->urlEdit->text();
     if (url.isEmpty()) {
         showMessageBox("download does not start because url is empty.");
-    } else {
+        return;
+    }
+
+    if (ui->singleMusicRadioButton->isChecked()) {
         downloadSingle(url);
+    } else {
+        downloadPlayList(url, ui->startEdit->text().toUInt(), ui->endEdit->text().toUInt());
     }
 }
 
@@ -65,6 +70,7 @@ void MainWindow::init()
     ui->endEdit->setText("");
     ui->urlEdit->setText("https://www.youtube.com/watch?v=l11mUSu7aeA");
     ui->cancelButton->setEnabled(false);
+    ui->cancelButton->hide();
 
     connect(&p, SIGNAL(readyReadStandardOutput()),
             this, SLOT(readSubProcess()));
@@ -72,21 +78,46 @@ void MainWindow::init()
             this, SLOT(readSubProcess()));
     connect(&p, SIGNAL(finished(int, QProcess::ExitStatus)),
             this, SLOT(commandFinished(int, QProcess::ExitStatus)));
+
+    injectEnvironmentVar();
 }
 
 void MainWindow::downloadPlayList(QString &url, unsigned int startPos, unsigned int endPos)
 {
+    if (startPos > endPos) {
+        showMessageBox("Playlist start position cannot be larger than end position.");
+        return;
+    }
 
+    QStringList arguments{"-icw", "--extract-audio",
+                          "--playlist-start",
+                          QString::number(startPos),
+                          "--playlist-end",
+                                  QString::number(endPos) ,
+                                  "--audio-format", "mp3",
+                                  "--output","/Users/robinshi/Desktop/QtTest/mp3/%(title)s.%(ext)s",
+                                  url};
+
+    p.start("/usr/local/bin/youtube-dl", arguments);
+    ui->startButton->setEnabled(false);
+    ui->startButton->setText("Downloading");
+}
+
+void MainWindow::injectEnvironmentVar()
+{
+    QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
+        env.insert("PATH", env.value("PATH") + ":/usr/local/opt/openjdk/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/share/dotnet:~/.dotnet/tools:/Library/Apple/usr/bin:/Users/robinshi/Library/Android/sdk/platform-tools/");
+        p.setProcessEnvironment(env);
 }
 
 void MainWindow::downloadSingle(QString &url)
 {
     QStringList arguments{"-icw", "--extract-audio",  "--audio-format", "mp3", "--output","/Users/robinshi/Desktop/QtTest/mp3/%(title)s.%(ext)s",  url};
-    QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
-        env.insert("PATH", env.value("PATH") + ":/usr/local/opt/openjdk/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/share/dotnet:~/.dotnet/tools:/Library/Apple/usr/bin:/Users/robinshi/Library/Android/sdk/platform-tools/");
-        p.setProcessEnvironment(env);
+
 
     p.start("/usr/local/bin/youtube-dl", arguments);
+    ui->startButton->setEnabled(false);
+    ui->startButton->setText("Downloading");
 }
 
 void MainWindow::addToOutput(QString str)
@@ -112,13 +143,15 @@ void MainWindow::readSubProcess() {
     }
 }
 
-void MainWindow::commandFinished(int exitCode, QProcess::ExitStatus exitStatus) {
+void MainWindow::commandFinished(int exitCode, QProcess::ExitStatus) {
     qInfo() << "finished " << exitCode;
     if (exitCode == 0) {
         addToOutput("\n###### Download Successful!!! #####\n\n");
     } else {
         addToOutput("###### Download Failed!!! #####\n\n");
     }
+    ui->startButton->setEnabled(true);
+    ui->startButton->setText("Start");
 
 }
 

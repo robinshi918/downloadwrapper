@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>568</width>
-    <height>430</height>
+    <height>524</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -185,17 +185,20 @@
       <x>30</x>
       <y>250</y>
       <width>511</width>
-      <height>121</height>
+      <height>221</height>
      </rect>
     </property>
     <property name="frameShape">
      <enum>QFrame::Box</enum>
     </property>
     <property name="text">
-     <string>output here</string>
+     <string/>
     </property>
     <property name="alignment">
      <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+    </property>
+    <property name="wordWrap">
+     <bool>true</bool>
     </property>
    </widget>
    <widget class="QLabel" name="label_5">

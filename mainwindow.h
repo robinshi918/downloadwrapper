@@ -25,10 +25,12 @@ private:
     void handleCancelButton();
     void handleStartButton();
     void handleTypeSelected();
+    void handleUploadButton();
 
     void init();
     void downloadSingle(QString& url);
     void downloadPlayList(QString& url, unsigned int startPos, unsigned int endPos);
+
     void showMessageBox(QString text);
 
     void addToOutput(QString str, bool replaceLastLine = false);

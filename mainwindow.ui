@@ -156,9 +156,9 @@
    <widget class="QPushButton" name="startButton">
     <property name="geometry">
      <rect>
-      <x>250</x>
+      <x>20</x>
       <y>190</y>
-      <width>211</width>
+      <width>151</width>
       <height>32</height>
      </rect>
     </property>
@@ -169,9 +169,9 @@
    <widget class="QPushButton" name="cancelButton">
     <property name="geometry">
      <rect>
-      <x>20</x>
+      <x>190</x>
       <y>190</y>
-      <width>211</width>
+      <width>171</width>
       <height>32</height>
      </rect>
     </property>
@@ -212,6 +212,19 @@
     </property>
     <property name="text">
      <string>Output</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="uploadButton">
+    <property name="geometry">
+     <rect>
+      <x>380</x>
+      <y>190</y>
+      <width>151</width>
+      <height>32</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Upload</string>
     </property>
    </widget>
   </widget>

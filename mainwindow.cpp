@@ -4,6 +4,8 @@
 #include <QProcess>
 #include <QMessageBox>
 #include <QDebug>
+#include <QFile>
+
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -13,9 +15,9 @@ MainWindow::MainWindow(QWidget *parent)
 
     connect(ui->cancelButton, &QPushButton::released, this, &MainWindow::handleCancelButton);
     connect(ui->startButton, &QPushButton::released, this, &MainWindow::handleStartButton);
+    connect(ui->uploadButton, &QPushButton::released, this, &MainWindow::handleUploadButton);
     connect(ui->singleMusicRadioButton, &QRadioButton::clicked, this, &MainWindow::handleTypeSelected);
     connect(ui->playlistRadioButton, &QRadioButton::clicked, this, &MainWindow::handleTypeSelected);
-
     init();
 }
 
@@ -62,6 +64,15 @@ void MainWindow::handleTypeSelected()
     }
 }
 
+void MainWindow::handleUploadButton()
+{
+    // upload a file
+    //curl -T upload_test.mp3 -u pi:hallo ftp://192.168.1.21:21/video/
+
+    //list a folder
+    //curl -l -u pi:hallo ftp://192.168.1.21:21/music/mp3_yuan
+}
+
 void MainWindow::init()
 {
     isSingleMusic = true;
@@ -69,8 +80,6 @@ void MainWindow::init()
     ui->startEdit->setText("");
     ui->endEdit->setText("");
     ui->urlEdit->setText("https://www.youtube.com/watch?v=l11mUSu7aeA");
-    ui->cancelButton->setEnabled(false);
-    ui->cancelButton->hide();
 
     connect(&p, SIGNAL(readyReadStandardOutput()),
             this, SLOT(readSubProcess()));

@@ -120,11 +120,22 @@ void MainWindow::downloadSingle(QString &url)
     ui->startButton->setText("Downloading");
 }
 
-void MainWindow::addToOutput(QString str)
+void MainWindow::addToOutput(QString str, bool replaceLastLine)
 {
-    if (!str.isEmpty()) {
-        QString labelContent = ui->outputLabel->text();
-        ui->outputLabel->setText(str + "\n" + labelContent);
+    if (str.isEmpty()) {
+        return;
+    }
+
+    QString labelContent = ui->outputLabel->text();
+    if (!replaceLastLine) {
+        ui->outputLabel->setText(str  + labelContent);
+    } else {
+        QStringList lines = labelContent.split("\n");
+        if (lines.size() > 0) {
+            lines[0] = str;
+        }
+        labelContent = lines.join("\n");
+        ui->outputLabel->setText(labelContent);
     }
 }
 
@@ -133,8 +144,12 @@ void MainWindow::readSubProcess() {
     QString stderr = p.readAllStandardError();
 
     if (stdout.size() > 0) {
+
+        if (stdout.contains("Deleting original file")) return;
+
         qInfo() << stdout;
-        addToOutput(stdout);
+        bool isDownloadingInfo = stdout.contains("[download]") && !stdout.contains("[download] Destination:");
+        addToOutput(stdout, isDownloadingInfo);
     }
 
     if (stderr.size() > 0) {

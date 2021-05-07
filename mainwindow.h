@@ -31,7 +31,7 @@ private:
     void downloadPlayList(QString& url, unsigned int startPos, unsigned int endPos);
     void showMessageBox(QString text);
 
-    void addToOutput(QString str);
+    void addToOutput(QString str, bool replaceLastLine = false);
 
 
     void injectEnvironmentVar();

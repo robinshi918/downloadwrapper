@@ -11,7 +11,8 @@ QT_END_NAMESPACE
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
-    QProcess p;
+    QProcess downloadProcess;
+    QProcess uploadProcess;
 
 public:
     MainWindow(QWidget *parent = nullptr);
@@ -29,6 +30,7 @@ private:
     void handleUploadButton();
 
     void init();
+
     void downloadSingle(QString& url);
     void downloadPlayList(QString& url, unsigned int startPos, unsigned int endPos);
     void uploadToFtp(QString fileName);
@@ -39,10 +41,14 @@ private:
 
 
     void injectEnvironmentVar();
+    QString normalizeUploadParameter(QString file);
 
 private slots:
-    void readSubProcess(void);
-    void commandFinished(int exitCode, QProcess::ExitStatus exitStatus);
+    void readDownloadProcessOutput(void);
+    void downloadCommandFinished(int exitCode, QProcess::ExitStatus exitStatus);
+
+    void readUploadProcessOutput(void);
+    void uploadCommandFinished(int exitCode, QProcess::ExitStatus exitStatus);
 
 };
 #endif // MAINWINDOW_H

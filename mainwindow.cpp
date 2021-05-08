@@ -5,7 +5,9 @@
 #include <QMessageBox>
 #include <QDebug>
 #include <QFile>
+#include <QFileInfo>
 
+#define DOWNLOAD_FOLDER "/Users/shiyun/Desktop/mp3/download/%(title)s.%(ext)s"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -29,7 +31,7 @@ MainWindow::~MainWindow()
 
 void MainWindow::handleCancelButton()
 {
-
+    ui->outputLabel->clear();
 }
 
 void MainWindow::showMessageBox(QString text)
@@ -72,10 +74,9 @@ void MainWindow::handleUploadButton()
     //list a folder
     //curl -l -u pi:hallo ftp://192.168.1.21:21/music/mp3_yuan
 
-    uploadToFtp("/Users/robinshi/Desktop/QtTest/downloadwrapper/mainwindow.cpp");
-
-
-
+    uploadToFtp(downloadFileName);
+    ui->uploadButton->setEnabled(false);
+    ui->uploadButton->setText("Uploading");
 }
 
 void MainWindow::uploadToFtp(QString fileName) {
@@ -83,10 +84,8 @@ void MainWindow::uploadToFtp(QString fileName) {
     if (fileName.isEmpty()) return;
 
     qInfo() << "uploading" << fileName;
-    QStringList arguments{"-T", fileName,  "-u", "pi:hallo","ftp://192.168.1.21:21/upload/"};
-    p.start("/usr/bin/curl", arguments);
-    ui->startButton->setEnabled(false);
-    ui->startButton->setText("Downloading");
+    QStringList arguments{"-T", fileName, "-g", "-u", "pi:hallo","ftp://192.168.1.21:21/upload/"};
+    uploadProcess.start("/usr/bin/curl", arguments);
 }
 
 void MainWindow::init()
@@ -97,12 +96,20 @@ void MainWindow::init()
     ui->endEdit->setText("");
     ui->urlEdit->setText("https://www.youtube.com/watch?v=l11mUSu7aeA");
 
-    connect(&p, SIGNAL(readyReadStandardOutput()),
-            this, SLOT(readSubProcess()));
-    connect(&p, SIGNAL(readyReadStandardError()),
-            this, SLOT(readSubProcess()));
-    connect(&p, SIGNAL(finished(int, QProcess::ExitStatus)),
-            this, SLOT(commandFinished(int, QProcess::ExitStatus)));
+    connect(&downloadProcess, SIGNAL(readyReadStandardOutput()),
+            this, SLOT(readDownloadProcessOutput()));
+    connect(&downloadProcess, SIGNAL(readyReadStandardError()),
+            this, SLOT(readDownloadProcessOutput()));
+    connect(&downloadProcess, SIGNAL(finished(int, QProcess::ExitStatus)),
+            this, SLOT(downloadCommandFinished(int, QProcess::ExitStatus)));
+
+
+    connect(&uploadProcess, SIGNAL(readyReadStandardOutput()),
+            this, SLOT(readUploadProcessOutput()));
+    connect(&uploadProcess, SIGNAL(readyReadStandardError()),
+            this, SLOT(readUploadProcessOutput()));
+    connect(&uploadProcess, SIGNAL(finished(int, QProcess::ExitStatus)),
+            this, SLOT(uploadCommandFinished(int, QProcess::ExitStatus)));
 
     injectEnvironmentVar();
 }
@@ -120,10 +127,10 @@ void MainWindow::downloadPlayList(QString &url, unsigned int startPos, unsigned 
                           "--playlist-end",
                                   QString::number(endPos) ,
                                   "--audio-format", "mp3",
-                                  "--output","/Users/robinshi/Desktop/QtTest/mp3/%(title)s.%(ext)s",
+                                  "--output",DOWNLOAD_FOLDER,
                                   url};
 
-    p.start("/usr/local/bin/youtube-dl", arguments);
+    downloadProcess.start("/usr/local/bin/youtube-dl", arguments);
     ui->startButton->setEnabled(false);
     ui->startButton->setText("Downloading");
 }
@@ -131,15 +138,17 @@ void MainWindow::downloadPlayList(QString &url, unsigned int startPos, unsigned 
 void MainWindow::injectEnvironmentVar()
 {
     QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
-        env.insert("PATH", env.value("PATH") + ":/usr/local/opt/openjdk/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/share/dotnet:~/.dotnet/tools:/Library/Apple/usr/bin:/Users/robinshi/Library/Android/sdk/platform-tools/");
-        p.setProcessEnvironment(env);
+    env.insert("PATH", env.value("PATH") + ":/usr/local/opt/openjdk/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/share/dotnet:~/.dotnet/tools:/Library/Apple/usr/bin:/Users/robinshi/Library/Android/sdk/platform-tools/");
+    downloadProcess.setProcessEnvironment(env);
+    uploadProcess.setProcessEnvironment(env);
 }
 
 void MainWindow::downloadSingle(QString &url)
 {
     downloadFileName = "";
-    QStringList arguments{"-icw", "--extract-audio",  "--audio-format", "mp3", "--output","/Users/robinshi/Desktop/QtTest/mp3/%(title)s.%(ext)s",  url};
-    p.start("/usr/local/bin/youtube-dl", arguments);
+    QStringList arguments{"-icw", "--extract-audio",  "--audio-format", "mp3", "--output",DOWNLOAD_FOLDER, url};
+
+    downloadProcess.start("/usr/local/bin/youtube-dl", arguments);
     ui->startButton->setEnabled(false);
     ui->startButton->setText("Downloading");
 }
@@ -163,15 +172,16 @@ void MainWindow::addToOutput(QString str, bool replaceLastLine)
     }
 }
 
-void MainWindow::readSubProcess() {
-    QString stdout = p.readAllStandardOutput();
-    QString stderr = p.readAllStandardError();
+void MainWindow::readDownloadProcessOutput() {
+    QString stdout = downloadProcess.readAllStandardOutput();
+    QString stderr = downloadProcess.readAllStandardError();
 
     if (stdout.size() > 0) {
 
         if (stdout.contains("Deleting original file")) return;
         if (stdout.contains("[ffmpeg] Destination: ")) {
             downloadFileName = stdout.mid(QString("[ffmpeg] Destination: ").size());
+            downloadFileName = downloadFileName.mid(0, downloadFileName.size() - 1);
             qInfo() << "downloaded file is:" << downloadFileName;
         }
 
@@ -186,16 +196,49 @@ void MainWindow::readSubProcess() {
     }
 }
 
-void MainWindow::commandFinished(int exitCode, QProcess::ExitStatus) {
-    qInfo() << "finished " << exitCode;
+void MainWindow::downloadCommandFinished(int exitCode, QProcess::ExitStatus) {
+    qInfo() << "download finished " << exitCode;
     if (exitCode == 0) {
         addToOutput("\n###### Download Successful!!! #####\n\n");
     } else {
         addToOutput("###### Download Failed!!! #####\n\n");
     }
     ui->startButton->setEnabled(true);
-    ui->startButton->setText("Start");
+    ui->startButton->setText("Download");
+}
 
+void MainWindow::readUploadProcessOutput(void){
+    QString stdout = uploadProcess.readAllStandardOutput();
+    QString stderr = uploadProcess.readAllStandardError();
+
+    if (stdout.size() > 0) {
+        qInfo() << "[upload:stdout]"  << stdout;
+        addToOutput(stdout);
+    }
+
+    if (stderr.size() > 0) {
+        qInfo() << "[upload:stderr]" << stderr;
+        addToOutput(stderr);
+    }
+}
+
+void MainWindow::uploadCommandFinished(int exitCode, QProcess::ExitStatus exitStatus) {
+    qInfo() << "upload finished " << exitCode;
+
+    QFileInfo info(downloadFileName);
+    QString fileName(info.fileName());
+
+    if (exitCode == 0) {
+        addToOutput("\n###### Upload Successful!!! #####\nFile Name: " + fileName + "\n\n");
+    } else {
+        addToOutput("###### Upload Failed!!! #####\nFile Name: " + fileName + "\n\n");
+    }
+    ui->uploadButton->setEnabled(true);
+    ui->uploadButton->setText("Upload");
+}
+
+QString MainWindow::normalizeUploadParameter(QString file) {
+    return "";
 }
 
 

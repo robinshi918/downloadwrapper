@@ -49,6 +49,7 @@ private slots:
     void uploadCommandFinished(int exitCode, QProcess::ExitStatus exitStatus);
 
     void autoUploadStateChanged(int);
+    void onFocusChanged(QWidget* old, QWidget* newWidget);
 
 };
 #endif // MAINWINDOW_H

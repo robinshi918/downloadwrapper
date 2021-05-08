@@ -6,6 +6,9 @@
 #include <QDebug>
 #include <QFile>
 #include <QFileInfo>
+#include <QFileDialog>
+#include <QClipboard>
+#include <QApplication>
 
 #define DOWNLOAD_FOLDER "/Users/shiyun/Desktop/mp3/download/%(title)s.%(ext)s"
 
@@ -21,7 +24,19 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->singleMusicRadioButton, &QRadioButton::clicked, this, &MainWindow::handleTypeSelected);
     connect(ui->playlistRadioButton, &QRadioButton::clicked, this, &MainWindow::handleTypeSelected);
     connect(ui->autoUploadCheck, &QCheckBox::stateChanged, this, &MainWindow::autoUploadStateChanged);
+    connect(qApp, SIGNAL(focusChanged(QWidget*, QWidget*)), this, SLOT(onFocusChanged(QWidget*, QWidget*)));
     init();
+}
+
+void MainWindow::onFocusChanged(QWidget* old, QWidget* newWidget)
+{
+
+    QClipboard* clipboard = QApplication::clipboard();
+    qInfo() << "onFocusChanged() : clipBoard text = " << clipboard->text();
+    QString cilpBoardText = clipboard->text();
+    if(!cilpBoardText.isEmpty()) {
+        ui->urlEdit->setText(cilpBoardText);
+    }
 }
 
 MainWindow::~MainWindow()
@@ -36,7 +51,6 @@ void MainWindow::init()
     ui->playListOptionGroup->setVisible(false);
     ui->startEdit->setText("");
     ui->endEdit->setText("");
-    ui->urlEdit->setText("https://www.youtube.com/watch?v=l11mUSu7aeA");
 
     connect(&downloadProcess, SIGNAL(readyReadStandardOutput()),
             this, SLOT(readDownloadProcessOutput()));
@@ -232,7 +246,7 @@ void MainWindow::downloadCommandFinished(int exitCode, QProcess::ExitStatus) {
         }
     } else {
         printToOutput("###### Download Failed!!! #####\n\n");
-        ui->statusbar->showMessage("file download failed! " + QString(exitCode));
+        ui->statusbar->showMessage("file download failed! " + QString("").setNum(exitCode));
     }
     ui->startButton->setEnabled(true);
     ui->startButton->setText("Download");
@@ -266,7 +280,7 @@ void MainWindow::uploadCommandFinished(int exitCode, QProcess::ExitStatus) {
         ui->statusbar->showMessage("file uploaded! ->" + fileName);
         printToOutput("\n###### Upload Successful!!! #####\nFile Name: " + fileName + "\n\n");
     } else {
-        ui->statusbar->showMessage("file upload failed. " + QString(exitCode));
+        ui->statusbar->showMessage("file upload failed. " + QString("").setNum(exitCode));
         printToOutput("###### Upload Failed!!! #####\nFile Name: " + fileName + "\n\n");
     }
     ui->uploadButton->setEnabled(true);

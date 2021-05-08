@@ -37,11 +37,9 @@ private:
 
     void showMessageBox(QString text);
 
-    void addToOutput(QString str, bool replaceLastLine = false);
-
+    void printToOutput(QString str, bool replaceLastLine = false);
 
     void injectEnvironmentVar();
-    QString normalizeUploadParameter(QString file);
 
 private slots:
     void readDownloadProcessOutput(void);
@@ -49,6 +47,8 @@ private slots:
 
     void readUploadProcessOutput(void);
     void uploadCommandFinished(int exitCode, QProcess::ExitStatus exitStatus);
+
+    void autoUploadStateChanged(int);
 
 };
 #endif // MAINWINDOW_H

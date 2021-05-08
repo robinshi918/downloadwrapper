@@ -20,6 +20,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->uploadButton, &QPushButton::released, this, &MainWindow::handleUploadButton);
     connect(ui->singleMusicRadioButton, &QRadioButton::clicked, this, &MainWindow::handleTypeSelected);
     connect(ui->playlistRadioButton, &QRadioButton::clicked, this, &MainWindow::handleTypeSelected);
+    connect(ui->autoUploadCheck, &QCheckBox::stateChanged, this, &MainWindow::autoUploadStateChanged);
     init();
 }
 
@@ -53,6 +54,12 @@ void MainWindow::init()
             this, SLOT(uploadCommandFinished(int, QProcess::ExitStatus)));
 
     injectEnvironmentVar();
+
+    if (ui->autoUploadCheck->checkState() == Qt::CheckState::Checked) {
+        ui->uploadButton->hide();
+    } else {
+        ui->uploadButton->show();
+    }
 }
 
 void MainWindow::handleCancelButton()
@@ -110,7 +117,7 @@ void MainWindow::uploadToFtp(QString fileName) {
     if (fileName.isEmpty()) return;
 
     qInfo() << "uploading" << fileName;
-    addToOutput("Uploading " + fileName);
+    printToOutput("Uploading " + fileName);
     QStringList arguments{"-T", fileName, "-g", "-u", "pi:hallo","ftp://192.168.1.21:21/upload/"};
     uploadProcess.start("/usr/bin/curl", arguments);
 }
@@ -156,9 +163,8 @@ void MainWindow::downloadSingle(QString &url)
     ui->startButton->setText("Downloading");
 }
 
-void MainWindow::addToOutput(QString str, bool replaceLastLine)
+void MainWindow::printToOutput(QString str, bool replaceLastLine)
 {
-//    qInfo() << "addToOutput" << str;
     if (str.isEmpty()) {
         return;
     }
@@ -191,24 +197,24 @@ void MainWindow::readDownloadProcessOutput() {
             qInfo() << "downloaded file is:" << downloadFileName;
             return;
         } else if (stdout.contains("[ffmpeg]")) {
-            addToOutput("converting to mp3 file. \n\n", true);
+            printToOutput("converting to mp3 file. \n\n", true);
             return;
         } else if (stdout.contains("[download]")) {
-            addToOutput("downloading from Youtube", true);
+            printToOutput("downloading from Youtube", true);
             return;
         } else if (stdout.contains("[youtube] ")) {
-            addToOutput("Start downloading process....\n\n");
+            printToOutput("Start downloading process....\n\n");
             return;
         }
 
         bool isDownloadingInfo = stdout.contains("[download]") && !stdout.contains("[download] Destination:");
-        addToOutput(stdout, isDownloadingInfo);
+        printToOutput(stdout, isDownloadingInfo);
     }
 
     if (stderr.size() > 0) {
         qInfo() << stderr;
         ui->statusbar->showMessage(stderr);
-        addToOutput(stderr);
+        printToOutput(stderr);
     }
 }
 
@@ -219,11 +225,14 @@ void MainWindow::downloadCommandFinished(int exitCode, QProcess::ExitStatus) {
         QFileInfo info(downloadFileName);
         QString fileName(info.fileName());
 
-        addToOutput("\n###### Download Successful!!! #####\nFile Name: " + fileName + "\n\n");
+        printToOutput("\n###### Download Successful!!! #####\nFile Name: " + fileName + "\n\n");
         ui->statusbar->showMessage("file downloaded! -> " + fileName);
+        if (ui->autoUploadCheck->checkState() == Qt::CheckState::Checked) {
+            uploadToFtp(downloadFileName);
+        }
     } else {
-        addToOutput("###### Download Failed!!! #####\n\n");
-        ui->statusbar->showMessage("file download failed! " + exitCode);
+        printToOutput("###### Download Failed!!! #####\n\n");
+        ui->statusbar->showMessage("file download failed! " + QString(exitCode));
     }
     ui->startButton->setEnabled(true);
     ui->startButton->setText("Download");
@@ -247,7 +256,7 @@ void MainWindow::readUploadProcessOutput(void){
     }
 }
 
-void MainWindow::uploadCommandFinished(int exitCode, QProcess::ExitStatus exitStatus) {
+void MainWindow::uploadCommandFinished(int exitCode, QProcess::ExitStatus) {
     qInfo() << "upload finished " << exitCode;
 
     QFileInfo info(downloadFileName);
@@ -255,17 +264,21 @@ void MainWindow::uploadCommandFinished(int exitCode, QProcess::ExitStatus exitSt
 
     if (exitCode == 0) {
         ui->statusbar->showMessage("file uploaded! ->" + fileName);
-        addToOutput("\n###### Upload Successful!!! #####\nFile Name: " + fileName + "\n\n");
+        printToOutput("\n###### Upload Successful!!! #####\nFile Name: " + fileName + "\n\n");
     } else {
-        ui->statusbar->showMessage("file upload failed. " + exitCode);
-        addToOutput("###### Upload Failed!!! #####\nFile Name: " + fileName + "\n\n");
+        ui->statusbar->showMessage("file upload failed. " + QString(exitCode));
+        printToOutput("###### Upload Failed!!! #####\nFile Name: " + fileName + "\n\n");
     }
     ui->uploadButton->setEnabled(true);
     ui->uploadButton->setText("Upload");
 }
 
-QString MainWindow::normalizeUploadParameter(QString file) {
-    return "";
+void MainWindow::autoUploadStateChanged(int state) {
+    if (state == Qt::CheckState::Checked) {
+        ui->uploadButton->hide();
+    } else {
+        ui->uploadButton->show();
+    }
 }
 
 

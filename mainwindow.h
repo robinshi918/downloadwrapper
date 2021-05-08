@@ -22,6 +22,7 @@ private:
     Ui::MainWindow *ui;
     bool isSingleMusic = true;
     QString downloadFileName;
+    QString downloadFolder;
 
 private:
     void handleCancelButton();
@@ -40,6 +41,7 @@ private:
     void printToOutput(QString str, bool replaceLastLine = false);
 
     void injectEnvironmentVar();
+    QString getDownloadFolder();
 
 private slots:
     void readDownloadProcessOutput(void);
@@ -50,6 +52,7 @@ private slots:
 
     void autoUploadStateChanged(int);
     void onFocusChanged(QWidget* old, QWidget* newWidget);
+    void onSelectDownloadPath();
 
 };
 #endif // MAINWINDOW_H

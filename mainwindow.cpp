@@ -10,14 +10,14 @@
 #include <QClipboard>
 #include <QApplication>
 
-#define DOWNLOAD_FOLDER "/Users/shiyun/Desktop/mp3/download/%(title)s.%(ext)s"
+#define DEFAULT_DOWNLOAD_FOLDER QDir::home().path() +  QDir::separator() + "Desktop/mp3/download/"
+#define DOWNLOAD_PATTERN QString("%(title)s.%(ext)s")
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-
     connect(ui->cancelButton, &QPushButton::released, this, &MainWindow::handleCancelButton);
     connect(ui->startButton, &QPushButton::released, this, &MainWindow::handleStartButton);
     connect(ui->uploadButton, &QPushButton::released, this, &MainWindow::handleUploadButton);
@@ -25,6 +25,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->playlistRadioButton, &QRadioButton::clicked, this, &MainWindow::handleTypeSelected);
     connect(ui->autoUploadCheck, &QCheckBox::stateChanged, this, &MainWindow::autoUploadStateChanged);
     connect(qApp, SIGNAL(focusChanged(QWidget*, QWidget*)), this, SLOT(onFocusChanged(QWidget*, QWidget*)));
+    connect(ui->pathSelectionButton, &QPushButton::released, this, &MainWindow::onSelectDownloadPath);
     init();
 }
 
@@ -32,7 +33,7 @@ void MainWindow::onFocusChanged(QWidget* old, QWidget* newWidget)
 {
 
     QClipboard* clipboard = QApplication::clipboard();
-    qInfo() << "onFocusChanged() : clipBoard text = " << clipboard->text();
+    //qInfo() << "onFocusChanged() : clipBoard text = " << clipboard->text();
     QString cilpBoardText = clipboard->text();
     if(!cilpBoardText.isEmpty()) {
         ui->urlEdit->setText(cilpBoardText);
@@ -48,9 +49,11 @@ MainWindow::~MainWindow()
 void MainWindow::init()
 {
     isSingleMusic = true;
+    downloadFolder = DEFAULT_DOWNLOAD_FOLDER;
     ui->playListOptionGroup->setVisible(false);
     ui->startEdit->setText("");
     ui->endEdit->setText("");
+    ui->savedPathEdit->setText(QString(DEFAULT_DOWNLOAD_FOLDER));
 
     connect(&downloadProcess, SIGNAL(readyReadStandardOutput()),
             this, SLOT(readDownloadProcessOutput()));
@@ -58,7 +61,6 @@ void MainWindow::init()
             this, SLOT(readDownloadProcessOutput()));
     connect(&downloadProcess, SIGNAL(finished(int, QProcess::ExitStatus)),
             this, SLOT(downloadCommandFinished(int, QProcess::ExitStatus)));
-
 
     connect(&uploadProcess, SIGNAL(readyReadStandardOutput()),
             this, SLOT(readUploadProcessOutput()));
@@ -151,7 +153,7 @@ void MainWindow::downloadPlayList(QString &url, unsigned int startPos, unsigned 
                                   "--playlist-end",
                                   QString::number(endPos) ,
                                   "--audio-format", "mp3",
-                                  "--output",DOWNLOAD_FOLDER,
+                                  "--output",getDownloadFolder() + QDir::separator() + DOWNLOAD_PATTERN,
                                   url};
 
     downloadProcess.start("/usr/local/bin/youtube-dl", arguments);
@@ -170,7 +172,7 @@ void MainWindow::injectEnvironmentVar()
 void MainWindow::downloadSingle(QString &url)
 {
     downloadFileName = "";
-    QStringList arguments{"-icw", "--extract-audio",  "--audio-format", "mp3", "--output",DOWNLOAD_FOLDER, url};
+    QStringList arguments{"-icw", "--extract-audio",  "--audio-format", "mp3", "--output",getDownloadFolder() + DOWNLOAD_PATTERN, url};
 
     downloadProcess.start("/usr/local/bin/youtube-dl", arguments);
     ui->startButton->setEnabled(false);
@@ -214,10 +216,10 @@ void MainWindow::readDownloadProcessOutput() {
             printToOutput("converting to mp3 file. \n\n", true);
             return;
         } else if (stdout.contains("[download]")) {
-            printToOutput("downloading from Youtube", true);
+            //printToOutput("downloading from Youtube", true);
             return;
         } else if (stdout.contains("[youtube] ")) {
-            printToOutput("Start downloading process....\n\n");
+            printToOutput("Start downloading....\n\n");
             return;
         }
 
@@ -239,14 +241,14 @@ void MainWindow::downloadCommandFinished(int exitCode, QProcess::ExitStatus) {
         QFileInfo info(downloadFileName);
         QString fileName(info.fileName());
 
-        printToOutput("\n###### Download Successful!!! #####\nFile Name: " + fileName + "\n\n");
-        ui->statusbar->showMessage("file downloaded! -> " + fileName);
+        printToOutput("\n###### Download Successful!!! #####\nFile Name: " + downloadFileName + "\n\n");
+        ui->statusbar->showMessage("[Download Successful] -> " + fileName);
         if (ui->autoUploadCheck->checkState() == Qt::CheckState::Checked) {
             uploadToFtp(downloadFileName);
         }
     } else {
         printToOutput("###### Download Failed!!! #####\n\n");
-        ui->statusbar->showMessage("file download failed! " + QString("").setNum(exitCode));
+        ui->statusbar->showMessage("[Download failed] " + QString("").setNum(exitCode));
     }
     ui->startButton->setEnabled(true);
     ui->startButton->setText("Download");
@@ -277,10 +279,10 @@ void MainWindow::uploadCommandFinished(int exitCode, QProcess::ExitStatus) {
     QString fileName(info.fileName());
 
     if (exitCode == 0) {
-        ui->statusbar->showMessage("file uploaded! ->" + fileName);
+        ui->statusbar->showMessage("[Upload Successful] ->" + fileName);
         printToOutput("\n###### Upload Successful!!! #####\nFile Name: " + fileName + "\n\n");
     } else {
-        ui->statusbar->showMessage("file upload failed. " + QString("").setNum(exitCode));
+        ui->statusbar->showMessage("[Upload failed] " + QString("").setNum(exitCode));
         printToOutput("###### Upload Failed!!! #####\nFile Name: " + fileName + "\n\n");
     }
     ui->uploadButton->setEnabled(true);
@@ -295,6 +297,22 @@ void MainWindow::autoUploadStateChanged(int state) {
     }
 }
 
+void MainWindow::onSelectDownloadPath()
+{
+    QString path = QFileDialog::getExistingDirectory(0,
+                                                     ("Select Output Folder"),
+                                                     QDir::home().path() +  QDir::separator() + "Desktop/mp3/");
+    qInfo() << "selected path =" << path;
+    if (!path.isEmpty()) {
+        ui->savedPathEdit->setText(path);
+        downloadFolder = path;
+    }
+}
+
+QString MainWindow::getDownloadFolder()
+{
+    return downloadFolder;
+}
 
 
 

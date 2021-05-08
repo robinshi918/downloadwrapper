@@ -71,6 +71,22 @@ void MainWindow::handleUploadButton()
 
     //list a folder
     //curl -l -u pi:hallo ftp://192.168.1.21:21/music/mp3_yuan
+
+    uploadToFtp("/Users/robinshi/Desktop/QtTest/downloadwrapper/mainwindow.cpp");
+
+
+
+}
+
+void MainWindow::uploadToFtp(QString fileName) {
+
+    if (fileName.isEmpty()) return;
+
+    qInfo() << "uploading" << fileName;
+    QStringList arguments{"-T", fileName,  "-u", "pi:hallo","ftp://192.168.1.21:21/upload/"};
+    p.start("/usr/bin/curl", arguments);
+    ui->startButton->setEnabled(false);
+    ui->startButton->setText("Downloading");
 }
 
 void MainWindow::init()
@@ -121,9 +137,8 @@ void MainWindow::injectEnvironmentVar()
 
 void MainWindow::downloadSingle(QString &url)
 {
+    downloadFileName = "";
     QStringList arguments{"-icw", "--extract-audio",  "--audio-format", "mp3", "--output","/Users/robinshi/Desktop/QtTest/mp3/%(title)s.%(ext)s",  url};
-
-
     p.start("/usr/local/bin/youtube-dl", arguments);
     ui->startButton->setEnabled(false);
     ui->startButton->setText("Downloading");
@@ -155,6 +170,10 @@ void MainWindow::readSubProcess() {
     if (stdout.size() > 0) {
 
         if (stdout.contains("Deleting original file")) return;
+        if (stdout.contains("[ffmpeg] Destination: ")) {
+            downloadFileName = stdout.mid(QString("[ffmpeg] Destination: ").size());
+            qInfo() << "downloaded file is:" << downloadFileName;
+        }
 
         qInfo() << stdout;
         bool isDownloadingInfo = stdout.contains("[download]") && !stdout.contains("[download] Destination:");

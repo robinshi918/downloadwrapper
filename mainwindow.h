@@ -20,6 +20,7 @@ public:
 private:
     Ui::MainWindow *ui;
     bool isSingleMusic = true;
+    QString downloadFileName;
 
 private:
     void handleCancelButton();
@@ -30,6 +31,7 @@ private:
     void init();
     void downloadSingle(QString& url);
     void downloadPlayList(QString& url, unsigned int startPos, unsigned int endPos);
+    void uploadToFtp(QString fileName);
 
     void showMessageBox(QString text);
 

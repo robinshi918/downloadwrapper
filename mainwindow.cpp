@@ -314,6 +314,20 @@ QString MainWindow::getDownloadFolder()
     return downloadFolder;
 }
 
+// subsonic commands
+// 1. force scan media library
+// 2. get scan status to check if scan has finished.
+
+// refer to http://www.subsonic.org/pages/api.jsp#startScan
+// HOW-TO: call startScan and poll the result of getScanStatus
+//startScan
+//curl "http://192.168.1.21:4040/rest/startScan?u=admin&t=1d20736c96f8b965488b23b3edee8b14&s=c19b2d&v=1.16.1&c=robinapp&f=json"
+
+//getScanStatus
+//curl "http://192.168.1.21:4040/rest/getScanStatus?u=admin&t=1d20736c96f8b965488b23b3edee8b14&s=c19b2d&v=1.16.1&c=robinapp&f=json"
+
+
+
 
 
 

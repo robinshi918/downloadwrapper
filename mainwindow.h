@@ -3,6 +3,7 @@
 
 #include <QMainWindow>
 #include <QProcess>
+#include <downloadstate.h>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -23,6 +24,8 @@ private:
     bool isSingleMusic = true;
     QString downloadFileName;
     QString downloadFolder;
+
+    int state = DownloadState::STATE_IDLE;
 
 private:
     void handleCancelButton();

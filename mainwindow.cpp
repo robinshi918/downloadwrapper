@@ -9,6 +9,8 @@
 #include <QFileDialog>
 #include <QClipboard>
 #include <QApplication>
+#include <downloadstate.h>
+
 
 #define DEFAULT_DOWNLOAD_FOLDER QDir::home().path() +  QDir::separator() + "Desktop/mp3/download/"
 #define DOWNLOAD_PATTERN QString("%(title)s.%(ext)s")
@@ -187,7 +189,7 @@ void MainWindow::printToOutput(QString str, bool replaceLastLine)
 
     QString labelContent = ui->outputLabel->text();
     if (!replaceLastLine) {
-        ui->outputLabel->setText(str  + labelContent);
+        ui->outputLabel->setText(labelContent + str);
     } else {
         QStringList lines = labelContent.split("\n");
         if (lines.size() > 0) {
@@ -204,27 +206,30 @@ void MainWindow::readDownloadProcessOutput() {
 
     if (stdout.size() > 0) {
         qInfo() << stdout;
+        // always print to status bar
         ui->statusbar->showMessage(stdout);
 
-        if (stdout.contains("Deleting original file")) {return;}
-        else if (stdout.contains("[ffmpeg] Destination: ")) {
+        int newState = DownloadState::STATE_NONE;
+
+        if (stdout.contains("Deleting original file")) {
+            return;
+        } else if (stdout.contains("[ffmpeg] Destination: ")) {
             downloadFileName = stdout.mid(QString("[ffmpeg] Destination: ").size());
             downloadFileName = downloadFileName.mid(0, downloadFileName.size() - 1);
             qInfo() << "downloaded file is:" << downloadFileName;
-            return;
+            newState = DownloadState::STATE_CONVERTING;
         } else if (stdout.contains("[ffmpeg]")) {
-            printToOutput("converting to mp3 file. \n\n", true);
-            return;
+            newState = DownloadState::STATE_CONVERTING;
         } else if (stdout.contains("[download]")) {
-            //printToOutput("downloading from Youtube", true);
-            return;
+            newState = DownloadState::STATE_DOWNLOADING;
         } else if (stdout.contains("[youtube] ")) {
-            printToOutput("Start downloading....\n\n");
-            return;
+            newState = DownloadState::STATE_PREPARING;
         }
 
-        bool isDownloadingInfo = stdout.contains("[download]") && !stdout.contains("[download] Destination:");
-        printToOutput(stdout, isDownloadingInfo);
+        if (this->state != newState) {
+            this->state = newState;
+            printToOutput(DownloadState::stateToString(newState));
+        }
     }
 
     if (stderr.size() > 0) {
@@ -241,8 +246,13 @@ void MainWindow::downloadCommandFinished(int exitCode, QProcess::ExitStatus) {
         QFileInfo info(downloadFileName);
         QString fileName(info.fileName());
 
-        printToOutput("\n###### Download Successful!!! #####\nFile Name: " + downloadFileName + "\n\n");
+        printToOutput(DownloadState::stateToString(DownloadState::STATE_COMPLETE));
+        printToOutput(QString("[") + fileName + "]\n");
+        printToOutput("-------------------------------\n\n");
+        this->state = DownloadState::STATE_IDLE;
+
         ui->statusbar->showMessage("[Download Successful] -> " + fileName);
+
         if (ui->autoUploadCheck->checkState() == Qt::CheckState::Checked) {
             uploadToFtp(downloadFileName);
         }
@@ -252,7 +262,6 @@ void MainWindow::downloadCommandFinished(int exitCode, QProcess::ExitStatus) {
     }
     ui->startButton->setEnabled(true);
     ui->startButton->setText("Download");
-
 }
 
 void MainWindow::readUploadProcessOutput(void){

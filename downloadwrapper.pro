@@ -11,14 +11,17 @@ CONFIG += c++11
 SOURCES += \
     main.cpp \
     mainwindow.cpp \
-    downloadstate.cpp
+    downloadstate.cpp \
+    renamedialog.cpp
 
 HEADERS += \
     mainwindow.h \
-    downloadstate.h
+    downloadstate.h \
+    renamedialog.h
 
 FORMS += \
-    mainwindow.ui
+    mainwindow.ui \
+    renamedialog.ui
 
 TRANSLATIONS += \
     downloadwrapper_en_NL.ts

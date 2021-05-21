@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include <QProcess>
 #include <downloadstate.h>
+#include <renamedialog.h>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -26,6 +27,7 @@ private:
     QString downloadFolder;
 
     int state = DownloadState::STATE_IDLE;
+    RenameDialog* renameDialog;
 
 private:
     void handleCancelButton();
@@ -34,6 +36,8 @@ private:
     void handleUploadButton();
 
     void init();
+    void connectSignals();
+    void initUI();
 
     void downloadSingle(QString& url);
     void downloadPlayList(QString& url, unsigned int startPos, unsigned int endPos);
@@ -56,6 +60,9 @@ private slots:
     void autoUploadStateChanged(int);
     void onFocusChanged(QWidget* old, QWidget* newWidget);
     void onSelectDownloadPath();
+
+    void onFileRenameAccepted();
+    void onFileRenameRejected();
 
 };
 #endif // MAINWINDOW_H

@@ -9,7 +9,9 @@
 #include <QFileDialog>
 #include <QClipboard>
 #include <QApplication>
+#include <QDateTime>
 #include <downloadstate.h>
+#include <renamedialog.h>
 
 
 #define DEFAULT_DOWNLOAD_FOLDER QDir::home().path() +  QDir::separator() + "Desktop/mp3/download/"
@@ -20,6 +22,7 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+    this->renameDialog = new RenameDialog;
     connect(ui->cancelButton, &QPushButton::released, this, &MainWindow::handleCancelButton);
     connect(ui->startButton, &QPushButton::released, this, &MainWindow::handleStartButton);
     connect(ui->uploadButton, &QPushButton::released, this, &MainWindow::handleUploadButton);
@@ -33,7 +36,6 @@ MainWindow::MainWindow(QWidget *parent)
 
 void MainWindow::onFocusChanged(QWidget* old, QWidget* newWidget)
 {
-
     QClipboard* clipboard = QApplication::clipboard();
     //qInfo() << "onFocusChanged() : clipBoard text = " << clipboard->text();
     QString cilpBoardText = clipboard->text();
@@ -57,6 +59,15 @@ void MainWindow::init()
     ui->endEdit->setText("");
     ui->savedPathEdit->setText(QString(DEFAULT_DOWNLOAD_FOLDER));
 
+
+    connectSignals();
+    injectEnvironmentVar();
+    initUI();
+
+
+}
+
+void MainWindow::connectSignals() {
     connect(&downloadProcess, SIGNAL(readyReadStandardOutput()),
             this, SLOT(readDownloadProcessOutput()));
     connect(&downloadProcess, SIGNAL(readyReadStandardError()),
@@ -71,7 +82,13 @@ void MainWindow::init()
     connect(&uploadProcess, SIGNAL(finished(int, QProcess::ExitStatus)),
             this, SLOT(uploadCommandFinished(int, QProcess::ExitStatus)));
 
-    injectEnvironmentVar();
+    connect(renameDialog, SIGNAL(accepted()), this, SLOT(onFileRenameAccepted()));
+    connect(renameDialog, SIGNAL(rejected()), this, SLOT(onFileRenameRejected()));
+}
+
+void MainWindow::initUI() {
+
+    qInfo() << "intUI";
 
     if (ui->autoUploadCheck->checkState() == Qt::CheckState::Checked) {
         ui->uploadButton->hide();
@@ -82,7 +99,7 @@ void MainWindow::init()
 
 void MainWindow::handleCancelButton()
 {
-    ui->outputLabel->clear();
+    ui->logEdit->clear();
 }
 
 void MainWindow::showMessageBox(QString text)
@@ -185,18 +202,10 @@ void MainWindow::printToOutput(QString str, bool replaceLastLine)
 {
     if (str.isEmpty()) {
         return;
-    }
-
-    QString labelContent = ui->outputLabel->text();
-    if (!replaceLastLine) {
-        ui->outputLabel->setText(labelContent + str);
     } else {
-        QStringList lines = labelContent.split("\n");
-        if (lines.size() > 0) {
-            lines[0] = str;
-        }
-        labelContent = lines.join("\n");
-        ui->outputLabel->setText(labelContent);
+        QDateTime date = QDateTime::currentDateTime();
+        QString formattedTime = date.toString("yyyy.MM.dd hh:mm:ss.SSS");
+        ui->logEdit->appendPlainText(formattedTime + "   " + str);
     }
 }
 
@@ -247,17 +256,21 @@ void MainWindow::downloadCommandFinished(int exitCode, QProcess::ExitStatus) {
         QString fileName(info.fileName());
 
         printToOutput(DownloadState::stateToString(DownloadState::STATE_COMPLETE));
-        printToOutput(QString("[") + fileName + "]\n");
-        printToOutput("-------------------------------\n\n");
+        printToOutput(QString("----> ") + fileName);
         this->state = DownloadState::STATE_IDLE;
 
         ui->statusbar->showMessage("[Download Successful] -> " + fileName);
 
-        if (ui->autoUploadCheck->checkState() == Qt::CheckState::Checked) {
-            uploadToFtp(downloadFileName);
+        if (ui->autoRenameCheck->checkState() == Qt::CheckState::Checked) {
+            renameDialog->setFileName(fileName);
+            renameDialog->show();
         }
+
+//        if (ui->autoUploadCheck->checkState() == Qt::CheckState::Checked) {
+//            uploadToFtp(downloadFileName);
+//        }
     } else {
-        printToOutput("###### Download Failed!!! #####\n\n");
+        printToOutput("###### Download Failed!!! #####\n");
         ui->statusbar->showMessage("[Download failed] " + QString("").setNum(exitCode));
     }
     ui->startButton->setEnabled(true);
@@ -271,12 +284,10 @@ void MainWindow::readUploadProcessOutput(void){
     if (stdout.size() > 0) {
         qInfo() << "[upload:stdout]"  << stdout;
         ui->statusbar->showMessage(stdout);
-        // addToOutput(stdout);
     }
 
     if (stderr.size() > 0) {
         qInfo() << "[upload:stderr]" << stderr;
-        // addToOutput(stderr);
         ui->statusbar->showMessage(stderr);
     }
 }
@@ -321,6 +332,16 @@ void MainWindow::onSelectDownloadPath()
 QString MainWindow::getDownloadFolder()
 {
     return downloadFolder;
+}
+
+void MainWindow::onFileRenameAccepted() {
+    QString newFileName = renameDialog->getFileName();
+    qInfo() << "file rename accepted: " << newFileName;
+    printToOutput("File renamed to: " + newFileName);
+}
+
+void MainWindow::onFileRenameRejected() {
+    qInfo() << "file rename rejected!";
 }
 
 // subsonic commands

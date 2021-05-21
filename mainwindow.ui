@@ -169,28 +169,6 @@
      <string>Start Download</string>
     </property>
    </widget>
-   <widget class="QLabel" name="outputLabel">
-    <property name="geometry">
-     <rect>
-      <x>20</x>
-      <y>300</y>
-      <width>651</width>
-      <height>251</height>
-     </rect>
-    </property>
-    <property name="frameShape">
-     <enum>QFrame::Box</enum>
-    </property>
-    <property name="text">
-     <string/>
-    </property>
-    <property name="alignment">
-     <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
-    </property>
-    <property name="wordWrap">
-     <bool>true</bool>
-    </property>
-   </widget>
    <widget class="QLabel" name="label_5">
     <property name="geometry">
      <rect>
@@ -235,7 +213,7 @@
      <rect>
       <x>20</x>
       <y>150</y>
-      <width>221</width>
+      <width>101</width>
       <height>20</height>
      </rect>
     </property>
@@ -270,6 +248,48 @@
     </property>
     <property name="text">
      <string>Select Download Folder</string>
+    </property>
+   </widget>
+   <widget class="QPlainTextEdit" name="logEdit">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>300</y>
+      <width>631</width>
+      <height>251</height>
+     </rect>
+    </property>
+    <property name="verticalScrollBarPolicy">
+     <enum>Qt::ScrollBarAsNeeded</enum>
+    </property>
+   </widget>
+   <widget class="QCheckBox" name="autoPublishCheck">
+    <property name="geometry">
+     <rect>
+      <x>140</x>
+      <y>150</y>
+      <width>111</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Auto Publish</string>
+    </property>
+   </widget>
+   <widget class="QCheckBox" name="autoRenameCheck">
+    <property name="geometry">
+     <rect>
+      <x>270</x>
+      <y>150</y>
+      <width>121</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Auto Rename</string>
+    </property>
+    <property name="checked">
+     <bool>true</bool>
     </property>
    </widget>
   </widget>

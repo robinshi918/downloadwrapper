@@ -14,16 +14,16 @@ QString DownloadState::stateToString(int state) {
         result = "";
         break;
     case STATE_PREPARING:
-        result = "Preparing download...\n";
+        result = "Preparing download...";
         break;
     case STATE_DOWNLOADING:
-        result = "Downloading...\n";
+        result = "Downloading...";
         break;
     case STATE_CONVERTING:
-        result = "Converting video to mp3...\n";
+        result = "Converting video to mp3...";
         break;
     case STATE_COMPLETE:
-        result = "Download Completed!\n";
+        result = "Download Completed!";
         break;
     default:
         break;

@@ -45,7 +45,7 @@ private:
 
     void showMessageBox(QString text);
 
-    void printToOutput(QString str, bool replaceLastLine = false);
+    void printToOutput(QString str, bool printTimestamp = true);
 
     void injectEnvironmentVar();
     QString getDownloadFolder();

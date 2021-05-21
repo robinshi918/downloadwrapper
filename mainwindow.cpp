@@ -117,6 +117,7 @@ void MainWindow::handleStartButton()
         return;
     }
 
+    printToOutput("\n", false);
     if (ui->singleMusicRadioButton->isChecked()) {
         downloadSingle(url);
     } else {
@@ -198,14 +199,18 @@ void MainWindow::downloadSingle(QString &url)
     ui->startButton->setText("Downloading");
 }
 
-void MainWindow::printToOutput(QString str, bool replaceLastLine)
+void MainWindow::printToOutput(QString str, bool printTimestamp)
 {
     if (str.isEmpty()) {
         return;
-    } else {
+    }
+
+    if (printTimestamp) {
         QDateTime date = QDateTime::currentDateTime();
-        QString formattedTime = date.toString("yyyy.MM.dd hh:mm:ss.SSS");
+        QString formattedTime = date.toString("yyyy.MM.dd hh:mm:ss");
         ui->logEdit->appendPlainText(formattedTime + "   " + str);
+    } else {
+        ui->logEdit->appendPlainText(str);
     }
 }
 
@@ -337,7 +342,15 @@ QString MainWindow::getDownloadFolder()
 void MainWindow::onFileRenameAccepted() {
     QString newFileName = renameDialog->getFileName();
     qInfo() << "file rename accepted: " << newFileName;
-    printToOutput("File renamed to: " + newFileName);
+
+    QString newFileFullPath = downloadFolder + QDir::separator() + newFileName;
+    qInfo() << "newFileFullPath" << newFileFullPath;
+    if (QFile::rename(downloadFileName, newFileFullPath)) {
+        printToOutput("File renamed to: " + newFileName);
+        this->downloadFileName = newFileName;
+    } else {
+        printToOutput("File renamed failed: " + newFileName);
+    }
 }
 
 void MainWindow::onFileRenameRejected() {

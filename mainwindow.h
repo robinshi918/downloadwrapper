@@ -54,6 +54,7 @@ private:
     void showMessageBox(QString text);
 
     void printToOutput(QString str, bool printTimestamp = true);
+    void printToStatusBar(QString str);
 
     void injectEnvironmentVar();
     QString getDownloadFolder();

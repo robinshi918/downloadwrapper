@@ -230,6 +230,11 @@ void MainWindow::printToOutput(QString str, bool printTimestamp)
     }
 }
 
+void MainWindow::printToStatusBar(QString str)
+{
+    ui->statusbar->showMessage(str);
+}
+
 void MainWindow::readDownloadProcessOutput() {
     QString stdout = downloadProcess.readAllStandardOutput();
     QString stderr = downloadProcess.readAllStandardError();
@@ -237,7 +242,7 @@ void MainWindow::readDownloadProcessOutput() {
     if (stdout.size() > 0) {
         qInfo() << stdout;
         // always print to status bar
-        ui->statusbar->showMessage(stdout);
+        printToStatusBar(stdout);
 
         int newState = DownloadState::STATE_NONE;
 
@@ -264,7 +269,7 @@ void MainWindow::readDownloadProcessOutput() {
 
     if (stderr.size() > 0) {
         qInfo() << stderr;
-        ui->statusbar->showMessage(stderr);
+        printToStatusBar(stderr);
         printToOutput(stderr);
     }
 }
@@ -280,7 +285,7 @@ void MainWindow::downloadCommandFinished(int exitCode, QProcess::ExitStatus) {
         printToOutput(QString("----> ") + fileName);
         this->state = DownloadState::STATE_IDLE;
 
-        ui->statusbar->showMessage("[Download Successful] -> " + fileName);
+        printToStatusBar("[Download Successful] -> " + fileName);
 
         if (ui->autoRenameCheck->checkState() == Qt::CheckState::Checked) {
             renameDialog->setFileName(fileName);
@@ -292,7 +297,7 @@ void MainWindow::downloadCommandFinished(int exitCode, QProcess::ExitStatus) {
         //        }
     } else {
         printToOutput("###### Download Failed!!! #####\n");
-        ui->statusbar->showMessage("[Download failed] " + QString("").setNum(exitCode));
+        printToStatusBar("[Download failed] " + QString("").setNum(exitCode));
     }
     ui->startButton->setEnabled(true);
     ui->startButton->setText("Download");
@@ -304,12 +309,12 @@ void MainWindow::readUploadProcessOutput(void){
 
     if (stdout.size() > 0) {
         qInfo() << "[upload:stdout]"  << stdout;
-        ui->statusbar->showMessage(stdout);
+        printToStatusBar(stdout);
     }
 
     if (stderr.size() > 0) {
         qInfo() << "[upload:stderr]" << stderr;
-        ui->statusbar->showMessage(stderr);
+        printToStatusBar(stderr);
     }
 }
 
@@ -320,10 +325,10 @@ void MainWindow::uploadCommandFinished(int exitCode, QProcess::ExitStatus) {
     QString fileName(info.fileName());
 
     if (exitCode == 0) {
-        ui->statusbar->showMessage("[Upload Successful] ->" + fileName);
+        printToStatusBar("[Upload Successful] ->" + fileName);
         printToOutput("Upload Successful!!!");
     } else {
-        ui->statusbar->showMessage("[Upload failed] " + QString("").setNum(exitCode));
+        printToStatusBar("[Upload failed] " + QString("").setNum(exitCode));
         printToOutput("Upload Failed!!! File Name: " + fileName);
     }
     ui->uploadButton->setEnabled(true);

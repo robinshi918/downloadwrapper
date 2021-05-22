@@ -29,6 +29,13 @@ private:
     int state = DownloadState::STATE_IDLE;
     RenameDialog* renameDialog;
 
+    // setting values
+    QString ftpUser;
+    QString ftpPassword;
+    QString ftpServer;
+    QString ftpRemotePath;
+    QString ftpPort;
+
 private:
     void handleCancelButton();
     void handleStartButton();
@@ -38,6 +45,7 @@ private:
     void init();
     void connectSignals();
     void initUI();
+    void initSettings();
 
     void downloadSingle(QString& url);
     void downloadPlayList(QString& url, unsigned int startPos, unsigned int endPos);
@@ -49,6 +57,8 @@ private:
 
     void injectEnvironmentVar();
     QString getDownloadFolder();
+
+
 
 private slots:
     void readDownloadProcessOutput(void);

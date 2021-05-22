@@ -17,6 +17,13 @@
 #define DEFAULT_DOWNLOAD_FOLDER QDir::home().path() +  QDir::separator() + "Desktop/mp3/download/"
 #define DOWNLOAD_PATTERN QString("%(title)s.%(ext)s")
 
+#define DEFAULT_FTP_USER_NAME QString("pi")
+#define DEFAULT_FTP_PASSWORD QString("hallo")
+#define DEFAULT_FTP_SERVER QString("192.168.1.21")
+#define DEFAULT_FTP_REMOTE_PATH QString("upload")
+#define DEFAULT_FTP_PORT QString("21")
+
+
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
@@ -32,6 +39,15 @@ MainWindow::MainWindow(QWidget *parent)
     connect(qApp, SIGNAL(focusChanged(QWidget*, QWidget*)), this, SLOT(onFocusChanged(QWidget*, QWidget*)));
     connect(ui->pathSelectionButton, &QPushButton::released, this, &MainWindow::onSelectDownloadPath);
     init();
+}
+
+void MainWindow::initSettings()
+{
+    this->ftpPassword = DEFAULT_FTP_PASSWORD;
+    this->ftpUser = DEFAULT_FTP_USER_NAME;
+    this->ftpServer = DEFAULT_FTP_SERVER;
+    this->ftpRemotePath = DEFAULT_FTP_REMOTE_PATH;
+    this->ftpPort = DEFAULT_FTP_PORT;
 }
 
 void MainWindow::onFocusChanged(QWidget* old, QWidget* newWidget)
@@ -59,12 +75,10 @@ void MainWindow::init()
     ui->endEdit->setText("");
     ui->savedPathEdit->setText(QString(DEFAULT_DOWNLOAD_FOLDER));
 
-
+    initSettings();
     connectSignals();
     injectEnvironmentVar();
     initUI();
-
-
 }
 
 void MainWindow::connectSignals() {
@@ -153,12 +167,14 @@ void MainWindow::uploadToFtp(QString fileName) {
     if (fileName.isEmpty()) return;
 
     qInfo() << "uploading" << fileName;
+
     printToOutput("Uploading " + fileName);
-    QStringList arguments{"-T", fileName, "-g", "-u", "pi:hallo","ftp://192.168.1.21:21/upload/"};
+    QStringList arguments{"-T", fileName,
+                "-g",
+                "-u", ftpUser + ":" + ftpPassword,
+                "ftp://" + ftpServer + ":" + ftpPort + "/" + ftpRemotePath + "/"};
     uploadProcess.start("/usr/bin/curl", arguments);
 }
-
-
 
 void MainWindow::downloadPlayList(QString &url, unsigned int startPos, unsigned int endPos)
 {

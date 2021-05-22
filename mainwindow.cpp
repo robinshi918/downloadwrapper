@@ -271,9 +271,9 @@ void MainWindow::downloadCommandFinished(int exitCode, QProcess::ExitStatus) {
             renameDialog->show();
         }
 
-//        if (ui->autoUploadCheck->checkState() == Qt::CheckState::Checked) {
-//            uploadToFtp(downloadFileName);
-//        }
+        //        if (ui->autoUploadCheck->checkState() == Qt::CheckState::Checked) {
+        //            uploadToFtp(downloadFileName);
+        //        }
     } else {
         printToOutput("###### Download Failed!!! #####\n");
         ui->statusbar->showMessage("[Download failed] " + QString("").setNum(exitCode));
@@ -305,10 +305,10 @@ void MainWindow::uploadCommandFinished(int exitCode, QProcess::ExitStatus) {
 
     if (exitCode == 0) {
         ui->statusbar->showMessage("[Upload Successful] ->" + fileName);
-        printToOutput("\n###### Upload Successful!!! #####\nFile Name: " + fileName + "\n\n");
+        printToOutput("Upload Successful!!!");
     } else {
         ui->statusbar->showMessage("[Upload failed] " + QString("").setNum(exitCode));
-        printToOutput("###### Upload Failed!!! #####\nFile Name: " + fileName + "\n\n");
+        printToOutput("Upload Failed!!! File Name: " + fileName);
     }
     ui->uploadButton->setEnabled(true);
     ui->uploadButton->setText("Upload");
@@ -347,7 +347,13 @@ void MainWindow::onFileRenameAccepted() {
     qInfo() << "newFileFullPath" << newFileFullPath;
     if (QFile::rename(downloadFileName, newFileFullPath)) {
         printToOutput("File renamed to: " + newFileName);
-        this->downloadFileName = newFileName;
+        this->downloadFileName = newFileFullPath;
+
+        if (ui->autoUploadCheck->checkState() == Qt::CheckState::Checked) {
+            uploadToFtp(downloadFileName);
+        } else {
+            qInfo() << "skip uploading to ftp.....";
+        }
     } else {
         printToOutput("File renamed failed: " + newFileName);
     }
@@ -355,6 +361,11 @@ void MainWindow::onFileRenameAccepted() {
 
 void MainWindow::onFileRenameRejected() {
     qInfo() << "file rename rejected!";
+    if (ui->autoUploadCheck->checkState() == Qt::CheckState::Checked) {
+        uploadToFtp(downloadFileName);
+    } else {
+        qInfo() << "skip uploading to ftp.....";
+    }
 }
 
 // subsonic commands

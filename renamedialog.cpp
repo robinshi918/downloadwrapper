@@ -13,7 +13,6 @@ RenameDialog::~RenameDialog()
     delete ui;
 }
 
-
 void RenameDialog::setFileName(QString fileName) {
     this->fileName = fileName;
     this->ui->fileNameEdit->setText(fileName);

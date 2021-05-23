@@ -15,6 +15,7 @@ class MainWindow : public QMainWindow
     Q_OBJECT
     QProcess downloadProcess;
     QProcess uploadProcess;
+    QProcess publishProcess;
 
 public:
     MainWindow(QWidget *parent = nullptr);
@@ -23,7 +24,7 @@ public:
 private:
     Ui::MainWindow *ui;
     bool isSingleMusic = true;
-    QString downloadFileName;
+    QString downloadFileFullPath;
     QString downloadFolder;
 
     int state = DownloadState::STATE_IDLE;
@@ -59,14 +60,16 @@ private:
     void injectEnvironmentVar();
     QString getDownloadFolder();
 
+    void publishSubsonic();
+
 
 
 private slots:
-    void readDownloadProcessOutput(void);
-    void downloadCommandFinished(int exitCode, QProcess::ExitStatus exitStatus);
+    void onDownloadProgress(void);
+    void onDownloadFinish(int exitCode, QProcess::ExitStatus exitStatus);
 
-    void readUploadProcessOutput(void);
-    void uploadCommandFinished(int exitCode, QProcess::ExitStatus exitStatus);
+    void onUploadProgress(void);
+    void onUploadFinish(int exitCode, QProcess::ExitStatus exitStatus);
 
     void autoUploadStateChanged(int);
     void onFocusChanged(QWidget* old, QWidget* newWidget);
@@ -74,6 +77,9 @@ private slots:
 
     void onFileRenameAccepted();
     void onFileRenameRejected();
+
+    void onPublishProgress();
+    void onPublishFinish(int exitCode, QProcess::ExitStatus exitStatus);
 
 };
 #endif // MAINWINDOW_H

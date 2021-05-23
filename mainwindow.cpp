@@ -82,22 +82,35 @@ void MainWindow::init()
 }
 
 void MainWindow::connectSignals() {
+    // download process
     connect(&downloadProcess, SIGNAL(readyReadStandardOutput()),
-            this, SLOT(readDownloadProcessOutput()));
+            this, SLOT(onDownloadProgress()));
     connect(&downloadProcess, SIGNAL(readyReadStandardError()),
-            this, SLOT(readDownloadProcessOutput()));
+            this, SLOT(onDownloadProgress()));
     connect(&downloadProcess, SIGNAL(finished(int, QProcess::ExitStatus)),
-            this, SLOT(downloadCommandFinished(int, QProcess::ExitStatus)));
+            this, SLOT(onDownloadFinish(int, QProcess::ExitStatus)));
 
+    // upload process
     connect(&uploadProcess, SIGNAL(readyReadStandardOutput()),
-            this, SLOT(readUploadProcessOutput()));
+            this, SLOT(onUploadProgress()));
     connect(&uploadProcess, SIGNAL(readyReadStandardError()),
-            this, SLOT(readUploadProcessOutput()));
+            this, SLOT(onUploadProgress()));
     connect(&uploadProcess, SIGNAL(finished(int, QProcess::ExitStatus)),
-            this, SLOT(uploadCommandFinished(int, QProcess::ExitStatus)));
+            this, SLOT(onUploadFinish(int, QProcess::ExitStatus)));
+
+    // publish process
+    connect(&publishProcess, SIGNAL(readyReadStandardError()),
+            this, SLOT(onPublishProgress()));
+    connect(&publishProcess, SIGNAL(readyReadStandardOutput()),
+            this, SLOT(onPublishProgress()));
+    connect(&publishProcess, SIGNAL(finished(int, QProcess::ExitStatus)),
+            this, SLOT(onPublishFinish(int, QProcess::ExitStatus)));
+
 
     connect(renameDialog, SIGNAL(accepted()), this, SLOT(onFileRenameAccepted()));
     connect(renameDialog, SIGNAL(rejected()), this, SLOT(onFileRenameRejected()));
+
+
 }
 
 void MainWindow::initUI() {
@@ -157,7 +170,7 @@ void MainWindow::handleUploadButton()
     //list a folder
     //curl -l -u pi:hallo ftp://192.168.1.21:21/music/mp3_yuan
 
-    uploadToFtp(downloadFileName);
+    uploadToFtp(downloadFileFullPath);
     ui->uploadButton->setEnabled(false);
     ui->uploadButton->setText("Uploading");
 }
@@ -207,7 +220,7 @@ void MainWindow::injectEnvironmentVar()
 
 void MainWindow::downloadSingle(QString &url)
 {
-    downloadFileName = "";
+    downloadFileFullPath = "";
     QStringList arguments{"-icw", "--extract-audio",  "--audio-format", "mp3", "--output",getDownloadFolder() + DOWNLOAD_PATTERN, url};
 
     downloadProcess.start("/usr/local/bin/youtube-dl", arguments);
@@ -235,7 +248,7 @@ void MainWindow::printToStatusBar(QString str)
     ui->statusbar->showMessage(str);
 }
 
-void MainWindow::readDownloadProcessOutput() {
+void MainWindow::onDownloadProgress() {
     QString stdout = downloadProcess.readAllStandardOutput();
     QString stderr = downloadProcess.readAllStandardError();
 
@@ -249,9 +262,9 @@ void MainWindow::readDownloadProcessOutput() {
         if (stdout.contains("Deleting original file")) {
             return;
         } else if (stdout.contains("[ffmpeg] Destination: ")) {
-            downloadFileName = stdout.mid(QString("[ffmpeg] Destination: ").size());
-            downloadFileName = downloadFileName.mid(0, downloadFileName.size() - 1);
-            qInfo() << "downloaded file is:" << downloadFileName;
+            downloadFileFullPath = stdout.mid(QString("[ffmpeg] Destination: ").size());
+            downloadFileFullPath = downloadFileFullPath.mid(0, downloadFileFullPath.size() - 1);
+            qInfo() << "downloaded file is:" << downloadFileFullPath;
             newState = DownloadState::STATE_CONVERTING;
         } else if (stdout.contains("[ffmpeg]")) {
             newState = DownloadState::STATE_CONVERTING;
@@ -274,11 +287,11 @@ void MainWindow::readDownloadProcessOutput() {
     }
 }
 
-void MainWindow::downloadCommandFinished(int exitCode, QProcess::ExitStatus) {
+void MainWindow::onDownloadFinish(int exitCode, QProcess::ExitStatus) {
     qInfo() << "download finished " << exitCode;
 
     if (exitCode == 0) {
-        QFileInfo info(downloadFileName);
+        QFileInfo info(downloadFileFullPath);
         QString fileName(info.fileName());
 
         printToOutput(DownloadState::stateToString(DownloadState::STATE_COMPLETE));
@@ -303,7 +316,7 @@ void MainWindow::downloadCommandFinished(int exitCode, QProcess::ExitStatus) {
     ui->startButton->setText("Download");
 }
 
-void MainWindow::readUploadProcessOutput(void){
+void MainWindow::onUploadProgress(void){
     QString stdout = uploadProcess.readAllStandardOutput();
     QString stderr = uploadProcess.readAllStandardError();
 
@@ -318,15 +331,16 @@ void MainWindow::readUploadProcessOutput(void){
     }
 }
 
-void MainWindow::uploadCommandFinished(int exitCode, QProcess::ExitStatus) {
+void MainWindow::onUploadFinish(int exitCode, QProcess::ExitStatus) {
     qInfo() << "upload finished " << exitCode;
 
-    QFileInfo info(downloadFileName);
+    QFileInfo info(downloadFileFullPath);
     QString fileName(info.fileName());
 
     if (exitCode == 0) {
         printToStatusBar("[Upload Successful] ->" + fileName);
-        printToOutput("Upload Successful!!!");
+        printToOutput("Upload Successful!!! ftp folder =  " + ftpRemotePath);
+        publishSubsonic();
     } else {
         printToStatusBar("[Upload failed] " + QString("").setNum(exitCode));
         printToOutput("Upload Failed!!! File Name: " + fileName);
@@ -364,14 +378,19 @@ void MainWindow::onFileRenameAccepted() {
     QString newFileName = renameDialog->getFileName();
     qInfo() << "file rename accepted: " << newFileName;
 
+    QFileInfo oldFileInfo(downloadFileFullPath);
+    QString oldFileName(oldFileInfo.fileName());
+
+    bool hasNewName = newFileName != oldFileName;
+
     QString newFileFullPath = downloadFolder + QDir::separator() + newFileName;
     qInfo() << "newFileFullPath" << newFileFullPath;
-    if (QFile::rename(downloadFileName, newFileFullPath)) {
+    if (!hasNewName || QFile::rename(downloadFileFullPath, newFileFullPath)) {
         printToOutput("File renamed to: " + newFileName);
-        this->downloadFileName = newFileFullPath;
+        this->downloadFileFullPath = newFileFullPath;
 
         if (ui->autoUploadCheck->checkState() == Qt::CheckState::Checked) {
-            uploadToFtp(downloadFileName);
+            uploadToFtp(downloadFileFullPath);
         } else {
             qInfo() << "skip uploading to ftp.....";
         }
@@ -383,7 +402,7 @@ void MainWindow::onFileRenameAccepted() {
 void MainWindow::onFileRenameRejected() {
     qInfo() << "file rename rejected!";
     if (ui->autoUploadCheck->checkState() == Qt::CheckState::Checked) {
-        uploadToFtp(downloadFileName);
+        uploadToFtp(downloadFileFullPath);
     } else {
         qInfo() << "skip uploading to ftp.....";
     }
@@ -401,6 +420,53 @@ void MainWindow::onFileRenameRejected() {
 //getScanStatus
 //curl "http://192.168.1.21:4040/rest/getScanStatus?u=admin&t=1d20736c96f8b965488b23b3edee8b14&s=c19b2d&v=1.16.1&c=robinapp&f=json"
 
+void MainWindow::publishSubsonic()
+{
+    if (ui->autoPublishCheck->checkState() == Qt::CheckState::Unchecked) {
+        qInfo() <<"ignore publish to subsonic server...";
+        printToOutput("ignore publish to subsonic server...");
+        return;
+    }
+
+    qInfo() << "publish to subsonic server....";
+
+    printToOutput("publishing to subsonic server....");
+
+    // s(salt): 6 hex digits
+    // t = md5(passwd + salt)
+    QStringList arguments{
+        "http://192.168.1.21:4040/rest/startScan?u=admin&t=1d20736c96f8b965488b23b3edee8b14&s=c19b2d&v=1.16.1&c=robinapp&f=json"
+    };
+    publishProcess.start("/usr/bin/curl", arguments);
+}
+
+void MainWindow::onPublishProgress()
+{
+    QString stdout = publishProcess.readAllStandardOutput();
+    QString stderr = publishProcess.readAllStandardError();
+
+    if (stdout.size() > 0) {
+        qInfo() << stdout;
+        printToStatusBar(stdout);
+    }
+
+    if (stderr.size() > 0) {
+        qInfo() << stderr;
+        printToStatusBar(stderr);
+    }
+}
+
+void MainWindow::onPublishFinish(int exitCode, QProcess::ExitStatus exitStatus)
+{
+    qInfo() << "onPublishFinish() exitCode = " << exitCode << ", exitStatus = " << exitStatus;
+    if (exitCode == 0) {
+        printToOutput("Published to Subsonic server successfully!");
+        printToStatusBar("Published to Subsonic server successfully!");
+    } else {
+        printToOutput("Publish to Subsonic server failed.");
+        printToStatusBar("Publish to Subsonic server failed");
+    }
+}
 
 
 

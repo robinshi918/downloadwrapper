@@ -5,6 +5,7 @@
 #include <QProcess>
 #include <downloadstate.h>
 #include <renamedialog.h>
+#include <settingsdialog.h>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -29,6 +30,7 @@ private:
 
     int state = DownloadState::STATE_IDLE;
     RenameDialog* renameDialog;
+    SettingsDialog* settingsDialog;
 
     // setting values
     QString ftpUser;

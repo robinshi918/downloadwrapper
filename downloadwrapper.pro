@@ -12,16 +12,19 @@ SOURCES += \
     main.cpp \
     mainwindow.cpp \
     downloadstate.cpp \
-    renamedialog.cpp
+    renamedialog.cpp \
+    settingsdialog.cpp
 
 HEADERS += \
     mainwindow.h \
     downloadstate.h \
-    renamedialog.h
+    renamedialog.h \
+    settingsdialog.h
 
 FORMS += \
     mainwindow.ui \
-    renamedialog.ui
+    renamedialog.ui \
+    settingsdialog.ui
 
 TRANSLATIONS += \
     downloadwrapper_en_NL.ts

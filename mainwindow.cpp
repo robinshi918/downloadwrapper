@@ -12,6 +12,7 @@
 #include <QDateTime>
 #include <downloadstate.h>
 #include <renamedialog.h>
+#include <settingsdialog.h>
 
 
 #define DEFAULT_DOWNLOAD_FOLDER QDir::home().path() +  QDir::separator() + "Desktop/mp3/download/"
@@ -30,6 +31,7 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
     this->renameDialog = new RenameDialog;
+    this->settingsDialog = new SettingsDialog;
     connect(ui->cancelButton, &QPushButton::released, this, &MainWindow::handleCancelButton);
     connect(ui->startButton, &QPushButton::released, this, &MainWindow::handleStartButton);
     connect(ui->uploadButton, &QPushButton::released, this, &MainWindow::handleUploadButton);
@@ -127,6 +129,7 @@ void MainWindow::initUI() {
 void MainWindow::handleCancelButton()
 {
     ui->logEdit->clear();
+    this->settingsDialog->show();
 }
 
 void MainWindow::showMessageBox(QString text)

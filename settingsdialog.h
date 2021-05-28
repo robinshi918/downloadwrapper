@@ -14,15 +14,19 @@ class SettingsDialog : public QDialog
 public:
     explicit SettingsDialog(QWidget *parent = nullptr);
     ~SettingsDialog();
+    void show();
 
 private:
     Ui::SettingsDialog *ui;
 
 private:
     void initUi();
+    void connectSetup();
 
 private slots:
     void onSelectDownloadPath();
+    void onOkButton();
+    void onCancelButton();
 };
 
 #endif // SETTINGSDIALOG_H

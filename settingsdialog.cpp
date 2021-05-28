@@ -9,7 +9,7 @@ SettingsDialog::SettingsDialog(QWidget *parent) :
     ui(new Ui::SettingsDialog)
 {
     ui->setupUi(this);
-    initUi();
+    connectSetup();
 }
 
 SettingsDialog::~SettingsDialog()
@@ -17,13 +17,22 @@ SettingsDialog::~SettingsDialog()
     delete ui;
 }
 
+void SettingsDialog::show()
+{
+    initUi();
+    QDialog::show();
+}
+
+void SettingsDialog::connectSetup()
+{
+    connect(ui->pathSelectButton, &QPushButton::released, this, &SettingsDialog::onSelectDownloadPath);
+    connect(ui->buttonBox, SIGNAL(accepted()), this, SLOT(onOkButton()));
+    connect(ui->buttonBox, SIGNAL(rejected()), this, SLOT(onCancelButton()));
+}
 
 void SettingsDialog::initUi()
 {
-
-    connect(ui->pathSelectButton, &QPushButton::released, this, &SettingsDialog::onSelectDownloadPath);
-
-    SettingManager& settings = SettingManager::getInstance();
+   SettingManager& settings = SettingManager::getInstance();
 
     ui->ftpServerIP->setText(settings.getValue(SettingManager::KEY_FTP_SERVER));
     ui->ftpServerPort->setText(settings.getValue(SettingManager::KEY_FTP_PORT));
@@ -52,4 +61,30 @@ void SettingsDialog::onSelectDownloadPath()
         ui->downloadPath->setText(path);
         setting.setValue(SettingManager::KEY_DOWNLOAD_FOLDER_PATH, path);
     }
+}
+
+void SettingsDialog::onOkButton()
+{
+    SettingManager& settings = SettingManager::getInstance();
+
+    settings.setValue(SettingManager::KEY_FTP_SERVER, ui->ftpServerIP->text());
+    settings.setValue(SettingManager::KEY_FTP_PORT, ui->ftpServerPort->text());
+    settings.setValue(SettingManager::KEY_FTP_REMOTE_PATH, ui->ftpRemotePath->text());
+    settings.setValue(SettingManager::KEY_FTP_USER, ui->ftpUser->text());
+    settings.setValue(SettingManager::KEY_FTP_PASSWORD, ui->ftpPasswd->text());
+
+    settings.setValue(SettingManager::KEY_SUBSONIC_SERVER, ui->subsonicServerIP->text());
+    settings.setValue(SettingManager::KEY_SUBSONIC_PORT, ui->subsonicServerPort->text());
+    settings.setValue(SettingManager::KEY_SUBSONIC_USER, ui->subsonicUser->text());
+    settings.setValue(SettingManager::KEY_SUBSONIC_PASSWORD, ui->subsonicPassword->text());
+    settings.setValue(SettingManager::KEY_SUBSONIC_SALT, ui->subsonicSalt->text());
+
+    settings.setValue(SettingManager::KEY_DOWNLOAD_FOLDER_PATH, ui->downloadPath->text());
+
+
+}
+
+void SettingsDialog::onCancelButton()
+{
+
 }

@@ -63,7 +63,7 @@ void MainWindow::onFocusChanged(QWidget* old, QWidget* newWidget)
     QClipboard* clipboard = QApplication::clipboard();
     //qInfo() << "onFocusChanged() : clipBoard text = " << clipboard->text();
     QString cilpBoardText = clipboard->text();
-    if(!cilpBoardText.isEmpty()) {
+    if(!cilpBoardText.isEmpty() && cilpBoardText.toLower().startsWith("https://")) {
         ui->urlEdit->setText(cilpBoardText);
     }
 }

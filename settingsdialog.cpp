@@ -81,6 +81,8 @@ void SettingsDialog::onOkButton()
     settings.setValue(SettingManager::KEY_SUBSONIC_SALT, ui->subsonicSalt->text());
 
     settings.setValue(SettingManager::KEY_DOWNLOAD_FOLDER_PATH, ui->downloadPath->text());
+
+    emit okButtonClicked();
 }
 
 QString SettingsDialog::md5(QString password)
@@ -93,5 +95,5 @@ QString SettingsDialog::md5(QString password)
 
 void SettingsDialog::onCancelButton()
 {
-
+    emit cancelButtonClicked();
 }

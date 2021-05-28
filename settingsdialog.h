@@ -16,6 +16,10 @@ public:
     ~SettingsDialog();
     void show();
 
+Q_SIGNALS:
+    void okButtonClicked();
+    void cancelButtonClicked();
+
 private:
     Ui::SettingsDialog *ui;
 

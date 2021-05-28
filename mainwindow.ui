@@ -265,7 +265,7 @@
     <widget class="QCheckBox" name="autoPublishCheck">
      <property name="geometry">
       <rect>
-       <x>120</x>
+       <x>130</x>
        <y>30</y>
        <width>111</width>
        <height>20</height>

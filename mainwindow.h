@@ -27,19 +27,18 @@ private:
     Ui::MainWindow *ui;
     bool isSingleMusic = true;
     QString downloadFileFullPath;
-    QString downloadFolder;
 
     int state = DownloadState::STATE_IDLE;
     RenameDialog* renameDialog;
     SettingsDialog* settingsDialog;
     QSettings* settings;
 
-    // setting values
-    QString ftpUser;
-    QString ftpPassword;
-    QString ftpServer;
-    QString ftpRemotePath;
-    QString ftpPort;
+//    // setting values
+//    QString ftpUser;
+//    QString ftpPassword;
+//    QString ftpServer;
+//    QString ftpRemotePath;
+//    QString ftpPort;
 
 private:
     void handleCancelButton();
@@ -51,7 +50,6 @@ private:
     void init();
     void connectSignals();
     void initUI();
-    void initSettings();
 
     void downloadSingle(QString& url);
     void downloadPlayList(QString& url, unsigned int startPos, unsigned int endPos);
@@ -78,7 +76,6 @@ private slots:
 
     void autoUploadStateChanged(int);
     void onFocusChanged(QWidget* old, QWidget* newWidget);
-    void onSelectDownloadPath();
 
     void onFileRenameAccepted();
     void onFileRenameRejected();

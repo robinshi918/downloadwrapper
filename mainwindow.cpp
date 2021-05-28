@@ -18,12 +18,6 @@
 
 #define DOWNLOAD_PATTERN QString("%(title)s.%(ext)s")
 
-#define DEFAULT_FTP_USER_NAME QString("pi")
-#define DEFAULT_FTP_PASSWORD QString("hallo")
-#define DEFAULT_FTP_SERVER QString("192.168.1.21")
-#define DEFAULT_FTP_REMOTE_PATH QString("upload")
-#define DEFAULT_FTP_PORT QString("21")
-
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -32,37 +26,15 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
     this->renameDialog = new RenameDialog;
     this->settingsDialog = new SettingsDialog;
-    connect(ui->cancelButton, &QPushButton::released, this, &MainWindow::handleCancelButton);
-    connect(ui->startButton, &QPushButton::released, this, &MainWindow::handleStartButton);
-    connect(ui->uploadButton, &QPushButton::released, this, &MainWindow::handleUploadButton);
-    connect(ui->settingsButton, &QPushButton::released, this, &MainWindow::handleSettingsButton);
-    connect(ui->singleMusicRadioButton, &QRadioButton::clicked, this, &MainWindow::handleTypeSelected);
-    connect(ui->playlistRadioButton, &QRadioButton::clicked, this, &MainWindow::handleTypeSelected);
-    connect(ui->autoUploadCheck, &QCheckBox::stateChanged, this, &MainWindow::autoUploadStateChanged);
-    connect(qApp, SIGNAL(focusChanged(QWidget*, QWidget*)), this, SLOT(onFocusChanged(QWidget*, QWidget*)));
+
     init();
-}
-
-void MainWindow::initSettings()
-{
-    SettingManager settings = SettingManager::getInstance();
-
-    ftpPassword = settings.getValue(SettingManager::KEY_FTP_PASSWORD);
-    ftpUser = settings.getValue(SettingManager::KEY_FTP_USER);
-    ftpServer = settings.getValue(SettingManager::KEY_FTP_SERVER);
-    ftpRemotePath = settings.getValue(SettingManager::KEY_FTP_REMOTE_PATH);
-    ftpPort = settings.getValue(SettingManager::KEY_FTP_PORT);
-
-    downloadFolder = settings.getValue(SettingManager::KEY_DOWNLOAD_FOLDER_PATH);
-
 }
 
 void MainWindow::onFocusChanged(QWidget*, QWidget*)
 {
     QClipboard* clipboard = QApplication::clipboard();
-    //qInfo() << "onFocusChanged() : clipBoard text = " << clipboard->text();
     QString cilpBoardText = clipboard->text();
-    if(!cilpBoardText.isEmpty() && cilpBoardText.toLower().startsWith("https://")) {
+    if(cilpBoardText.toLower().startsWith("https://")) {
         ui->urlEdit->setText(cilpBoardText);
     }
 }
@@ -80,13 +52,22 @@ void MainWindow::init()
     ui->startEdit->setText("");
     ui->endEdit->setText("");
 
-    initSettings();
     connectSignals();
     injectEnvironmentVar();
     initUI();
 }
 
 void MainWindow::connectSignals() {
+
+    connect(ui->cancelButton, &QPushButton::released, this, &MainWindow::handleCancelButton);
+    connect(ui->startButton, &QPushButton::released, this, &MainWindow::handleStartButton);
+    connect(ui->uploadButton, &QPushButton::released, this, &MainWindow::handleUploadButton);
+    connect(ui->settingsButton, &QPushButton::released, this, &MainWindow::handleSettingsButton);
+    connect(ui->singleMusicRadioButton, &QRadioButton::clicked, this, &MainWindow::handleTypeSelected);
+    connect(ui->playlistRadioButton, &QRadioButton::clicked, this, &MainWindow::handleTypeSelected);
+    connect(ui->autoUploadCheck, &QCheckBox::stateChanged, this, &MainWindow::autoUploadStateChanged);
+    connect(qApp, SIGNAL(focusChanged(QWidget*, QWidget*)), this, SLOT(onFocusChanged(QWidget*, QWidget*)));
+
     // download process
     connect(&downloadProcess, SIGNAL(readyReadStandardOutput()),
             this, SLOT(onDownloadProgress()));
@@ -111,11 +92,8 @@ void MainWindow::connectSignals() {
     connect(&publishProcess, SIGNAL(finished(int, QProcess::ExitStatus)),
             this, SLOT(onPublishFinish(int, QProcess::ExitStatus)));
 
-
     connect(renameDialog, SIGNAL(accepted()), this, SLOT(onFileRenameAccepted()));
     connect(renameDialog, SIGNAL(rejected()), this, SLOT(onFileRenameRejected()));
-
-
 }
 
 void MainWindow::initUI() {
@@ -155,7 +133,10 @@ void MainWindow::handleStartButton()
         return;
     }
 
-    printToOutput("\n", false);
+    if(!ui->logEdit->toPlainText().isEmpty()) {
+        printToOutput("\n", false);
+    }
+
     if (ui->singleMusicRadioButton->isChecked()) {
         downloadSingle(url);
     } else {
@@ -193,6 +174,15 @@ void MainWindow::uploadToFtp(QString fileName) {
     qInfo() << "uploading" << fileName;
 
     printToOutput("Uploading " + fileName);
+
+    // read ftp parameters
+    SettingManager settings = SettingManager::getInstance();
+    QString ftpPassword = settings.getValue(SettingManager::KEY_FTP_PASSWORD);
+    QString ftpUser = settings.getValue(SettingManager::KEY_FTP_USER);
+    QString ftpServer = settings.getValue(SettingManager::KEY_FTP_SERVER);
+    QString ftpRemotePath = settings.getValue(SettingManager::KEY_FTP_REMOTE_PATH);
+    QString ftpPort = settings.getValue(SettingManager::KEY_FTP_PORT);
+
     QStringList arguments{"-T", fileName,
                 "-g",
                 "-u", ftpUser + ":" + ftpPassword,
@@ -315,10 +305,6 @@ void MainWindow::onDownloadFinish(int exitCode, QProcess::ExitStatus) {
             renameDialog->setFileName(fileName);
             renameDialog->show();
         }
-
-        //        if (ui->autoUploadCheck->checkState() == Qt::CheckState::Checked) {
-        //            uploadToFtp(downloadFileName);
-        //        }
     } else {
         printToOutput("###### Download Failed!!! #####\n");
         printToStatusBar("[Download failed] " + QString("").setNum(exitCode));
@@ -350,7 +336,9 @@ void MainWindow::onUploadFinish(int exitCode, QProcess::ExitStatus) {
 
     if (exitCode == 0) {
         printToStatusBar("[Upload Successful] ->" + fileName);
-        printToOutput("Upload Successful!!! ftp folder =  " + ftpRemotePath);
+        printToOutput("Upload Successful!!! ftp folder =  " +
+                      SettingManager::getInstance().getValue(SettingManager::KEY_FTP_REMOTE_PATH)
+                      + "/" + fileName);
         publishSubsonic();
     } else {
         printToStatusBar("[Upload failed] " + QString("").setNum(exitCode));
@@ -368,20 +356,9 @@ void MainWindow::autoUploadStateChanged(int state) {
     }
 }
 
-void MainWindow::onSelectDownloadPath()
-{
-    QString path = QFileDialog::getExistingDirectory(0,
-                                                     ("Select Output Folder"),
-                                                     QDir::home().path() +  QDir::separator() + "Desktop/mp3/");
-    qInfo() << "selected path =" << path;
-    if (!path.isEmpty()) {
-        downloadFolder = path;
-    }
-}
-
 QString MainWindow::getDownloadFolder()
 {
-    return downloadFolder;
+    return SettingManager::getInstance().getValue(SettingManager::KEY_DOWNLOAD_FOLDER_PATH);
 }
 
 void MainWindow::onFileRenameAccepted() {
@@ -393,7 +370,7 @@ void MainWindow::onFileRenameAccepted() {
 
     bool hasNewName = newFileName != oldFileName;
 
-    QString newFileFullPath = downloadFolder + QDir::separator() + newFileName;
+    QString newFileFullPath = getDownloadFolder() + QDir::separator() + newFileName;
     qInfo() << "newFileFullPath" << newFileFullPath;
     if (!hasNewName || QFile::rename(downloadFileFullPath, newFileFullPath)) {
         printToOutput("File renamed to: " + newFileName);
@@ -442,12 +419,22 @@ void MainWindow::publishSubsonic()
 
     printToOutput("publishing to subsonic server....");
 
-    // s(salt): 6 hex digits
-    // t = md5(passwd + salt)
-    QStringList arguments{
-        "http://192.168.1.21:4040/rest/startScan?u=admin&t=1d20736c96f8b965488b23b3edee8b14&s=c19b2d&v=1.16.1&c=robinapp&f=json"
+    SettingManager& setting = SettingManager::getInstance();
+    QStringList arg{
+        "http://" + setting.getValue(SettingManager::KEY_SUBSONIC_SERVER)
+                + ":" + setting.getValue(SettingManager::KEY_SUBSONIC_PORT)
+                + "/rest/startScan?u="
+                + setting.getValue(SettingManager::KEY_SUBSONIC_USER)
+                + "&t=" + setting.getValue(SettingManager::KEY_SUBSONIC_PASSWORD)
+                + "&s=" + setting.getValue(SettingManager::KEY_SUBSONIC_SALT)
+                + "&v=1.16.1&c=robinapp&f=json"
     };
-    publishProcess.start("/usr/bin/curl", arguments);
+    qInfo() << "subsonic param = " << arg.at(0);
+
+//    QStringList arguments{
+//        "http://192.168.1.21:4040/rest/startScan?u=admin&t=1d20736c96f8b965488b23b3edee8b14&s=c19b2d&v=1.16.1&c=robinapp&f=json"
+//    };
+    publishProcess.start("/usr/bin/curl", arg);
 }
 
 void MainWindow::onPublishProgress()

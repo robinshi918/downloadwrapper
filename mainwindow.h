@@ -7,6 +7,7 @@
 #include <renamedialog.h>
 #include <settingsdialog.h>
 #include <QSettings>
+#include <settingmanager.h>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -30,15 +31,8 @@ private:
 
     int state = DownloadState::STATE_IDLE;
     RenameDialog* renameDialog;
-    SettingsDialog* settingsDialog;
-    QSettings* settings;
-
-//    // setting values
-//    QString ftpUser;
-//    QString ftpPassword;
-//    QString ftpServer;
-//    QString ftpRemotePath;
-//    QString ftpPort;
+    SettingsDialog* settingDialog;
+    SettingManager* setting;
 
 private:
     void handleCancelButton();

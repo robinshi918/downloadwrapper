@@ -25,7 +25,8 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
     this->renameDialog = new RenameDialog;
-    this->settingsDialog = new SettingsDialog;
+    this->settingDialog = new SettingsDialog;
+    this->setting = &SettingManager::getInstance();
 
     init();
 }
@@ -115,7 +116,7 @@ void MainWindow::handleCancelButton()
 
 void MainWindow::handleSettingsButton()
 {
-    this->settingsDialog->show();
+    this->settingDialog->show();
 }
 
 void MainWindow::showMessageBox(QString text)
@@ -156,9 +157,6 @@ void MainWindow::handleTypeSelected()
 
 void MainWindow::handleUploadButton()
 {
-    // upload a file
-    //curl -T upload_test.mp3 -u pi:hallo ftp://192.168.1.21:21/video/
-
     //list a folder
     //curl -l -u pi:hallo ftp://192.168.1.21:21/music/mp3_yuan
 
@@ -176,12 +174,11 @@ void MainWindow::uploadToFtp(QString fileName) {
     printToOutput("Uploading " + fileName);
 
     // read ftp parameters
-    SettingManager settings = SettingManager::getInstance();
-    QString ftpPassword = settings.getValue(SettingManager::KEY_FTP_PASSWORD);
-    QString ftpUser = settings.getValue(SettingManager::KEY_FTP_USER);
-    QString ftpServer = settings.getValue(SettingManager::KEY_FTP_SERVER);
-    QString ftpRemotePath = settings.getValue(SettingManager::KEY_FTP_REMOTE_PATH);
-    QString ftpPort = settings.getValue(SettingManager::KEY_FTP_PORT);
+    QString ftpPassword = setting->getValue(SettingManager::KEY_FTP_PASSWORD);
+    QString ftpUser = setting->getValue(SettingManager::KEY_FTP_USER);
+    QString ftpServer = setting->getValue(SettingManager::KEY_FTP_SERVER);
+    QString ftpRemotePath = setting->getValue(SettingManager::KEY_FTP_REMOTE_PATH);
+    QString ftpPort = setting->getValue(SettingManager::KEY_FTP_PORT);
 
     QStringList arguments{"-T", fileName,
                 "-g",
@@ -337,7 +334,7 @@ void MainWindow::onUploadFinish(int exitCode, QProcess::ExitStatus) {
     if (exitCode == 0) {
         printToStatusBar("[Upload Successful] ->" + fileName);
         printToOutput("Upload Successful!!! ftp folder =  " +
-                      SettingManager::getInstance().getValue(SettingManager::KEY_FTP_REMOTE_PATH)
+                      setting->getValue(SettingManager::KEY_FTP_REMOTE_PATH)
                       + "/" + fileName);
         publishSubsonic();
     } else {
@@ -358,7 +355,7 @@ void MainWindow::autoUploadStateChanged(int state) {
 
 QString MainWindow::getDownloadFolder()
 {
-    return SettingManager::getInstance().getValue(SettingManager::KEY_DOWNLOAD_FOLDER_PATH);
+    return setting->getValue(SettingManager::KEY_DOWNLOAD_FOLDER_PATH);
 }
 
 void MainWindow::onFileRenameAccepted() {
@@ -419,14 +416,13 @@ void MainWindow::publishSubsonic()
 
     printToOutput("publishing to subsonic server....");
 
-    SettingManager& setting = SettingManager::getInstance();
     QStringList arg{
-        "http://" + setting.getValue(SettingManager::KEY_SUBSONIC_SERVER)
-                + ":" + setting.getValue(SettingManager::KEY_SUBSONIC_PORT)
+        "http://" + setting->getValue(SettingManager::KEY_SUBSONIC_SERVER)
+                + ":" + setting->getValue(SettingManager::KEY_SUBSONIC_PORT)
                 + "/rest/startScan?u="
-                + setting.getValue(SettingManager::KEY_SUBSONIC_USER)
-                + "&t=" + setting.getValue(SettingManager::KEY_SUBSONIC_PASSWORD)
-                + "&s=" + setting.getValue(SettingManager::KEY_SUBSONIC_SALT)
+                + setting->getValue(SettingManager::KEY_SUBSONIC_USER)
+                + "&t=" + setting->getValue(SettingManager::KEY_SUBSONIC_PASSWORD)
+                + "&s=" + setting->getValue(SettingManager::KEY_SUBSONIC_SALT)
                 + "&v=1.16.1&c=robinapp&f=json"
     };
     qInfo() << "subsonic param = " << arg.at(0);

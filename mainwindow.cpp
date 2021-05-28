@@ -24,9 +24,9 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    this->renameDialog = new RenameDialog;
-    this->settingDialog = new SettingsDialog;
-    this->setting = &SettingManager::getInstance();
+    this->m_renameDialog = new RenameDialog;
+    this->m_settingDialog = new SettingsDialog;
+    this->m_setting = &SettingManager::getInstance();
 
     init();
 }
@@ -48,7 +48,7 @@ MainWindow::~MainWindow()
 
 void MainWindow::init()
 {
-    isSingleMusic = true;
+    m_isSingleMusic = true;
     ui->playListOptionGroup->setVisible(false);
     ui->startEdit->setText("");
     ui->endEdit->setText("");
@@ -70,31 +70,31 @@ void MainWindow::connectSignals() {
     connect(qApp, SIGNAL(focusChanged(QWidget*, QWidget*)), this, SLOT(onFocusChanged(QWidget*, QWidget*)));
 
     // download process
-    connect(&downloadProcess, SIGNAL(readyReadStandardOutput()),
+    connect(&m_downloadProcess, SIGNAL(readyReadStandardOutput()),
             this, SLOT(onDownloadProgress()));
-    connect(&downloadProcess, SIGNAL(readyReadStandardError()),
+    connect(&m_downloadProcess, SIGNAL(readyReadStandardError()),
             this, SLOT(onDownloadProgress()));
-    connect(&downloadProcess, SIGNAL(finished(int, QProcess::ExitStatus)),
+    connect(&m_downloadProcess, SIGNAL(finished(int, QProcess::ExitStatus)),
             this, SLOT(onDownloadFinish(int, QProcess::ExitStatus)));
 
     // upload process
-    connect(&uploadProcess, SIGNAL(readyReadStandardOutput()),
+    connect(&m_uploadProcess, SIGNAL(readyReadStandardOutput()),
             this, SLOT(onUploadProgress()));
-    connect(&uploadProcess, SIGNAL(readyReadStandardError()),
+    connect(&m_uploadProcess, SIGNAL(readyReadStandardError()),
             this, SLOT(onUploadProgress()));
-    connect(&uploadProcess, SIGNAL(finished(int, QProcess::ExitStatus)),
+    connect(&m_uploadProcess, SIGNAL(finished(int, QProcess::ExitStatus)),
             this, SLOT(onUploadFinish(int, QProcess::ExitStatus)));
 
     // publish process
-    connect(&publishProcess, SIGNAL(readyReadStandardError()),
+    connect(&m_publishProcess, SIGNAL(readyReadStandardError()),
             this, SLOT(onPublishProgress()));
-    connect(&publishProcess, SIGNAL(readyReadStandardOutput()),
+    connect(&m_publishProcess, SIGNAL(readyReadStandardOutput()),
             this, SLOT(onPublishProgress()));
-    connect(&publishProcess, SIGNAL(finished(int, QProcess::ExitStatus)),
+    connect(&m_publishProcess, SIGNAL(finished(int, QProcess::ExitStatus)),
             this, SLOT(onPublishFinish(int, QProcess::ExitStatus)));
 
-    connect(renameDialog, SIGNAL(accepted()), this, SLOT(onFileRenameAccepted()));
-    connect(renameDialog, SIGNAL(rejected()), this, SLOT(onFileRenameRejected()));
+    connect(m_renameDialog, SIGNAL(accepted()), this, SLOT(onFileRenameAccepted()));
+    connect(m_renameDialog, SIGNAL(rejected()), this, SLOT(onFileRenameRejected()));
 }
 
 void MainWindow::initUI() {
@@ -116,7 +116,7 @@ void MainWindow::handleCancelButton()
 
 void MainWindow::handleSettingsButton()
 {
-    this->settingDialog->show();
+    this->m_settingDialog->show();
 }
 
 void MainWindow::showMessageBox(QString text)
@@ -150,7 +150,7 @@ void MainWindow::handleTypeSelected()
     if (ui->singleMusicRadioButton->isChecked()) {
         init();
     } else {
-        this->isSingleMusic = false;
+        this->m_isSingleMusic = false;
         ui->playListOptionGroup->setVisible(true);
     }
 }
@@ -160,7 +160,7 @@ void MainWindow::handleUploadButton()
     //list a folder
     //curl -l -u pi:hallo ftp://192.168.1.21:21/music/mp3_yuan
 
-    uploadToFtp(downloadFileFullPath);
+    uploadToFtp(m_downloadFileFullPath);
     ui->uploadButton->setEnabled(false);
     ui->uploadButton->setText("Uploading");
 }
@@ -174,17 +174,17 @@ void MainWindow::uploadToFtp(QString fileName) {
     printToOutput("Uploading " + fileName);
 
     // read ftp parameters
-    QString ftpPassword = setting->getValue(SettingManager::KEY_FTP_PASSWORD);
-    QString ftpUser = setting->getValue(SettingManager::KEY_FTP_USER);
-    QString ftpServer = setting->getValue(SettingManager::KEY_FTP_SERVER);
-    QString ftpRemotePath = setting->getValue(SettingManager::KEY_FTP_REMOTE_PATH);
-    QString ftpPort = setting->getValue(SettingManager::KEY_FTP_PORT);
+    QString ftpPassword = m_setting->getValue(SettingManager::KEY_FTP_PASSWORD);
+    QString ftpUser = m_setting->getValue(SettingManager::KEY_FTP_USER);
+    QString ftpServer = m_setting->getValue(SettingManager::KEY_FTP_SERVER);
+    QString ftpRemotePath = m_setting->getValue(SettingManager::KEY_FTP_REMOTE_PATH);
+    QString ftpPort = m_setting->getValue(SettingManager::KEY_FTP_PORT);
 
     QStringList arguments{"-T", fileName,
                 "-g",
                 "-u", ftpUser + ":" + ftpPassword,
                 "ftp://" + ftpServer + ":" + ftpPort + "/" + ftpRemotePath + "/"};
-    uploadProcess.start("/usr/bin/curl", arguments);
+    m_uploadProcess.start("/usr/bin/curl", arguments);
 }
 
 void MainWindow::downloadPlayList(QString &url, unsigned int startPos, unsigned int endPos)
@@ -203,7 +203,7 @@ void MainWindow::downloadPlayList(QString &url, unsigned int startPos, unsigned 
                                   "--output",getDownloadFolder() + QDir::separator() + DOWNLOAD_PATTERN,
                                   url};
 
-    downloadProcess.start("/usr/local/bin/youtube-dl", arguments);
+    m_downloadProcess.start("/usr/local/bin/youtube-dl", arguments);
     ui->startButton->setEnabled(false);
     ui->startButton->setText("Downloading");
 }
@@ -212,16 +212,16 @@ void MainWindow::injectEnvironmentVar()
 {
     QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
     env.insert("PATH", env.value("PATH") + ":/usr/local/opt/openjdk/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/share/dotnet:~/.dotnet/tools:/Library/Apple/usr/bin:/Users/robinshi/Library/Android/sdk/platform-tools/");
-    downloadProcess.setProcessEnvironment(env);
-    uploadProcess.setProcessEnvironment(env);
+    m_downloadProcess.setProcessEnvironment(env);
+    m_uploadProcess.setProcessEnvironment(env);
 }
 
 void MainWindow::downloadSingle(QString &url)
 {
-    downloadFileFullPath = "";
+    m_downloadFileFullPath = "";
     QStringList arguments{"-icw", "--extract-audio",  "--audio-format", "mp3", "--output",getDownloadFolder() + DOWNLOAD_PATTERN, url};
 
-    downloadProcess.start("/usr/local/bin/youtube-dl", arguments);
+    m_downloadProcess.start("/usr/local/bin/youtube-dl", arguments);
     ui->startButton->setEnabled(false);
     ui->startButton->setText("Downloading");
 }
@@ -247,8 +247,8 @@ void MainWindow::printToStatusBar(QString str)
 }
 
 void MainWindow::onDownloadProgress() {
-    QString stdout = downloadProcess.readAllStandardOutput();
-    QString stderr = downloadProcess.readAllStandardError();
+    QString stdout = m_downloadProcess.readAllStandardOutput();
+    QString stderr = m_downloadProcess.readAllStandardError();
 
     if (stdout.size() > 0) {
         qInfo() << stdout;
@@ -260,9 +260,9 @@ void MainWindow::onDownloadProgress() {
         if (stdout.contains("Deleting original file")) {
             return;
         } else if (stdout.contains("[ffmpeg] Destination: ")) {
-            downloadFileFullPath = stdout.mid(QString("[ffmpeg] Destination: ").size());
-            downloadFileFullPath = downloadFileFullPath.mid(0, downloadFileFullPath.size() - 1);
-            qInfo() << "downloaded file is:" << downloadFileFullPath;
+            m_downloadFileFullPath = stdout.mid(QString("[ffmpeg] Destination: ").size());
+            m_downloadFileFullPath = m_downloadFileFullPath.mid(0, m_downloadFileFullPath.size() - 1);
+            qInfo() << "downloaded file is:" << m_downloadFileFullPath;
             newState = DownloadState::STATE_CONVERTING;
         } else if (stdout.contains("[ffmpeg]")) {
             newState = DownloadState::STATE_CONVERTING;
@@ -272,8 +272,8 @@ void MainWindow::onDownloadProgress() {
             newState = DownloadState::STATE_PREPARING;
         }
 
-        if (this->state != newState) {
-            this->state = newState;
+        if (this->m_state != newState) {
+            this->m_state = newState;
             printToOutput(DownloadState::stateToString(newState));
         }
     }
@@ -289,18 +289,18 @@ void MainWindow::onDownloadFinish(int exitCode, QProcess::ExitStatus) {
     qInfo() << "download finished " << exitCode;
 
     if (exitCode == 0) {
-        QFileInfo info(downloadFileFullPath);
+        QFileInfo info(m_downloadFileFullPath);
         QString fileName(info.fileName());
 
         printToOutput(DownloadState::stateToString(DownloadState::STATE_COMPLETE));
         printToOutput(QString("----> ") + fileName);
-        this->state = DownloadState::STATE_IDLE;
+        this->m_state = DownloadState::STATE_IDLE;
 
         printToStatusBar("[Download Successful] -> " + fileName);
 
         if (ui->autoRenameCheck->checkState() == Qt::CheckState::Checked) {
-            renameDialog->setFileName(fileName);
-            renameDialog->show();
+            m_renameDialog->setFileName(fileName);
+            m_renameDialog->show();
         }
     } else {
         printToOutput("###### Download Failed!!! #####\n");
@@ -311,8 +311,8 @@ void MainWindow::onDownloadFinish(int exitCode, QProcess::ExitStatus) {
 }
 
 void MainWindow::onUploadProgress(void){
-    QString stdout = uploadProcess.readAllStandardOutput();
-    QString stderr = uploadProcess.readAllStandardError();
+    QString stdout = m_uploadProcess.readAllStandardOutput();
+    QString stderr = m_uploadProcess.readAllStandardError();
 
     if (stdout.size() > 0) {
         qInfo() << "[upload:stdout]"  << stdout;
@@ -328,13 +328,13 @@ void MainWindow::onUploadProgress(void){
 void MainWindow::onUploadFinish(int exitCode, QProcess::ExitStatus) {
     qInfo() << "upload finished " << exitCode;
 
-    QFileInfo info(downloadFileFullPath);
+    QFileInfo info(m_downloadFileFullPath);
     QString fileName(info.fileName());
 
     if (exitCode == 0) {
         printToStatusBar("[Upload Successful] ->" + fileName);
         printToOutput("Upload Successful!!! ftp folder =  " +
-                      setting->getValue(SettingManager::KEY_FTP_REMOTE_PATH)
+                      m_setting->getValue(SettingManager::KEY_FTP_REMOTE_PATH)
                       + "/" + fileName);
         publishSubsonic();
     } else {
@@ -355,26 +355,26 @@ void MainWindow::autoUploadStateChanged(int state) {
 
 QString MainWindow::getDownloadFolder()
 {
-    return setting->getValue(SettingManager::KEY_DOWNLOAD_FOLDER_PATH);
+    return m_setting->getValue(SettingManager::KEY_DOWNLOAD_FOLDER_PATH);
 }
 
 void MainWindow::onFileRenameAccepted() {
-    QString newFileName = renameDialog->getFileName();
+    QString newFileName = m_renameDialog->getFileName();
     qInfo() << "file rename accepted: " << newFileName;
 
-    QFileInfo oldFileInfo(downloadFileFullPath);
+    QFileInfo oldFileInfo(m_downloadFileFullPath);
     QString oldFileName(oldFileInfo.fileName());
 
     bool hasNewName = newFileName != oldFileName;
 
     QString newFileFullPath = getDownloadFolder() + QDir::separator() + newFileName;
     qInfo() << "newFileFullPath" << newFileFullPath;
-    if (!hasNewName || QFile::rename(downloadFileFullPath, newFileFullPath)) {
+    if (!hasNewName || QFile::rename(m_downloadFileFullPath, newFileFullPath)) {
         printToOutput("File renamed to: " + newFileName);
-        this->downloadFileFullPath = newFileFullPath;
+        this->m_downloadFileFullPath = newFileFullPath;
 
         if (ui->autoUploadCheck->checkState() == Qt::CheckState::Checked) {
-            uploadToFtp(downloadFileFullPath);
+            uploadToFtp(m_downloadFileFullPath);
         } else {
             qInfo() << "skip uploading to ftp.....";
         }
@@ -386,7 +386,7 @@ void MainWindow::onFileRenameAccepted() {
 void MainWindow::onFileRenameRejected() {
     qInfo() << "file rename rejected!";
     if (ui->autoUploadCheck->checkState() == Qt::CheckState::Checked) {
-        uploadToFtp(downloadFileFullPath);
+        uploadToFtp(m_downloadFileFullPath);
     } else {
         qInfo() << "skip uploading to ftp.....";
     }
@@ -417,12 +417,12 @@ void MainWindow::publishSubsonic()
     printToOutput("publishing to subsonic server....");
 
     QStringList arg{
-        "http://" + setting->getValue(SettingManager::KEY_SUBSONIC_SERVER)
-                + ":" + setting->getValue(SettingManager::KEY_SUBSONIC_PORT)
+        "http://" + m_setting->getValue(SettingManager::KEY_SUBSONIC_SERVER)
+                + ":" + m_setting->getValue(SettingManager::KEY_SUBSONIC_PORT)
                 + "/rest/startScan?u="
-                + setting->getValue(SettingManager::KEY_SUBSONIC_USER)
-                + "&t=" + setting->getValue(SettingManager::KEY_SUBSONIC_PASSWORD)
-                + "&s=" + setting->getValue(SettingManager::KEY_SUBSONIC_SALT)
+                + m_setting->getValue(SettingManager::KEY_SUBSONIC_USER)
+                + "&t=" + m_setting->getValue(SettingManager::KEY_SUBSONIC_PASSWORD)
+                + "&s=" + m_setting->getValue(SettingManager::KEY_SUBSONIC_SALT)
                 + "&v=1.16.1&c=robinapp&f=json"
     };
     qInfo() << "subsonic param = " << arg.at(0);
@@ -430,13 +430,13 @@ void MainWindow::publishSubsonic()
 //    QStringList arguments{
 //        "http://192.168.1.21:4040/rest/startScan?u=admin&t=1d20736c96f8b965488b23b3edee8b14&s=c19b2d&v=1.16.1&c=robinapp&f=json"
 //    };
-    publishProcess.start("/usr/bin/curl", arg);
+    m_publishProcess.start("/usr/bin/curl", arg);
 }
 
 void MainWindow::onPublishProgress()
 {
-    QString stdout = publishProcess.readAllStandardOutput();
-    QString stderr = publishProcess.readAllStandardError();
+    QString stdout = m_publishProcess.readAllStandardOutput();
+    QString stderr = m_publishProcess.readAllStandardError();
 
     if (stdout.size() > 0) {
         qInfo() << stdout;

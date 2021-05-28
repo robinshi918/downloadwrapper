@@ -16,9 +16,9 @@ QT_END_NAMESPACE
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
-    QProcess downloadProcess;
-    QProcess uploadProcess;
-    QProcess publishProcess;
+    QProcess m_downloadProcess;
+    QProcess m_uploadProcess;
+    QProcess m_publishProcess;
 
 public:
     MainWindow(QWidget *parent = nullptr);
@@ -26,13 +26,13 @@ public:
 
 private:
     Ui::MainWindow *ui;
-    bool isSingleMusic = true;
-    QString downloadFileFullPath;
+    bool m_isSingleMusic = true;
+    QString m_downloadFileFullPath;
 
-    int state = DownloadState::STATE_IDLE;
-    RenameDialog* renameDialog;
-    SettingsDialog* settingDialog;
-    SettingManager* setting;
+    int m_state = DownloadState::STATE_IDLE;
+    RenameDialog* m_renameDialog;
+    SettingsDialog* m_settingDialog;
+    SettingManager* m_setting;
 
 private:
     void handleCancelButton();
@@ -58,8 +58,6 @@ private:
     QString getDownloadFolder();
 
     void publishSubsonic();
-
-
 
 private slots:
     void onDownloadProgress(void);

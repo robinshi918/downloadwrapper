@@ -3,6 +3,7 @@
 #include <settingmanager.h>
 #include <QFileDialog>
 #include <QDir>
+#include <QCryptographicHash>
 
 SettingsDialog::SettingsDialog(QWidget *parent) :
     QDialog(parent),
@@ -76,12 +77,18 @@ void SettingsDialog::onOkButton()
     settings.setValue(SettingManager::KEY_SUBSONIC_SERVER, ui->subsonicServerIP->text());
     settings.setValue(SettingManager::KEY_SUBSONIC_PORT, ui->subsonicServerPort->text());
     settings.setValue(SettingManager::KEY_SUBSONIC_USER, ui->subsonicUser->text());
-    settings.setValue(SettingManager::KEY_SUBSONIC_PASSWORD, ui->subsonicPassword->text());
+    settings.setValue(SettingManager::KEY_SUBSONIC_PASSWORD, md5(ui->subsonicPassword->text() + ui->subsonicSalt->text()));
     settings.setValue(SettingManager::KEY_SUBSONIC_SALT, ui->subsonicSalt->text());
 
     settings.setValue(SettingManager::KEY_DOWNLOAD_FOLDER_PATH, ui->downloadPath->text());
+}
 
-
+QString SettingsDialog::md5(QString password)
+{
+    if (password.isEmpty()) return "";
+    QString result = QString(QCryptographicHash::hash(QString("Hallo828c19b2d").toLocal8Bit(),QCryptographicHash::Md5).toHex());
+    qInfo() << "md5 result of " + password << " = " << result;
+    return result;
 }
 
 void SettingsDialog::onCancelButton()

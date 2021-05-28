@@ -22,6 +22,7 @@ private:
 private:
     void initUi();
     void connectSetup();
+    QString md5(QString password);
 
 private slots:
     void onSelectDownloadPath();

@@ -13,9 +13,9 @@
 #include <downloadstate.h>
 #include <renamedialog.h>
 #include <settingsdialog.h>
+#include <settingmanager.h>
 
 
-#define DEFAULT_DOWNLOAD_FOLDER QDir::home().path() +  QDir::separator() + "Desktop/mp3/download/"
 #define DOWNLOAD_PATTERN QString("%(title)s.%(ext)s")
 
 #define DEFAULT_FTP_USER_NAME QString("pi")
@@ -40,25 +40,24 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->playlistRadioButton, &QRadioButton::clicked, this, &MainWindow::handleTypeSelected);
     connect(ui->autoUploadCheck, &QCheckBox::stateChanged, this, &MainWindow::autoUploadStateChanged);
     connect(qApp, SIGNAL(focusChanged(QWidget*, QWidget*)), this, SLOT(onFocusChanged(QWidget*, QWidget*)));
-    connect(ui->pathSelectionButton, &QPushButton::released, this, &MainWindow::onSelectDownloadPath);
     init();
 }
 
 void MainWindow::initSettings()
 {
-    QString settingFile = QApplication::applicationDirPath().left(1) + ":/setting.ini";
-    if (settings == NULL) {
-        settings = new QSettings(settingFile, QSettings::NativeFormat);
-    }
+    SettingManager settings = SettingManager::getInstance();
 
-    this->ftpPassword = settings->value("ftp_password", DEFAULT_FTP_PASSWORD).toString();
-    this->ftpUser = settings->value("ftp_user", DEFAULT_FTP_USER_NAME).toString();
-    this->ftpServer = settings->value("ftp_server", DEFAULT_FTP_SERVER).toString();
-    this->ftpRemotePath = settings->value("ftp_remote_path", DEFAULT_FTP_REMOTE_PATH).toString();
-    this->ftpPort = settings->value("ftp_port", DEFAULT_FTP_PORT).toString();
+    ftpPassword = settings.getValue(SettingManager::KEY_FTP_PASSWORD);
+    ftpUser = settings.getValue(SettingManager::KEY_FTP_USER);
+    ftpServer = settings.getValue(SettingManager::KEY_FTP_SERVER);
+    ftpRemotePath = settings.getValue(SettingManager::KEY_FTP_REMOTE_PATH);
+    ftpPort = settings.getValue(SettingManager::KEY_FTP_PORT);
+
+    downloadFolder = settings.getValue(SettingManager::KEY_DOWNLOAD_FOLDER_PATH);
+
 }
 
-void MainWindow::onFocusChanged(QWidget* old, QWidget* newWidget)
+void MainWindow::onFocusChanged(QWidget*, QWidget*)
 {
     QClipboard* clipboard = QApplication::clipboard();
     //qInfo() << "onFocusChanged() : clipBoard text = " << clipboard->text();
@@ -77,11 +76,9 @@ MainWindow::~MainWindow()
 void MainWindow::init()
 {
     isSingleMusic = true;
-    downloadFolder = DEFAULT_DOWNLOAD_FOLDER;
     ui->playListOptionGroup->setVisible(false);
     ui->startEdit->setText("");
     ui->endEdit->setText("");
-    ui->savedPathEdit->setText(QString(DEFAULT_DOWNLOAD_FOLDER));
 
     initSettings();
     connectSignals();
@@ -378,7 +375,6 @@ void MainWindow::onSelectDownloadPath()
                                                      QDir::home().path() +  QDir::separator() + "Desktop/mp3/");
     qInfo() << "selected path =" << path;
     if (!path.isEmpty()) {
-        ui->savedPathEdit->setText(path);
         downloadFolder = path;
     }
 }

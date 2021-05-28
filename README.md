@@ -1,6 +1,11 @@
 # downloadwrapper
-## About
-GUI wrapper for youtube-dl
+## Features
+
+- Download mp3 file from YouTube by calling youtube-dl
+- Upload the mp3 file to a FTP server
+- Force scan the media files on a Subsonic server
+
+
 
 ## How to use
 ![image](https://user-images.githubusercontent.com/10605324/120049390-e15f0080-c06d-11eb-9140-37039c4d9af9.png)

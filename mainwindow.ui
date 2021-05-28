@@ -274,6 +274,9 @@
      <property name="text">
       <string>Auto Publish</string>
      </property>
+     <property name="checked">
+      <bool>true</bool>
+     </property>
     </widget>
     <widget class="QCheckBox" name="autoRenameCheck">
      <property name="geometry">

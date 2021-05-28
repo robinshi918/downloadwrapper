@@ -227,9 +227,9 @@
    <widget class="QLineEdit" name="savedPathEdit">
     <property name="geometry">
      <rect>
-      <x>210</x>
+      <x>180</x>
       <y>240</y>
-      <width>461</width>
+      <width>491</width>
       <height>21</height>
      </rect>
     </property>
@@ -242,12 +242,12 @@
      <rect>
       <x>15</x>
       <y>234</y>
-      <width>181</width>
+      <width>151</width>
       <height>32</height>
      </rect>
     </property>
     <property name="text">
-     <string>Select Download Folder</string>
+     <string>Download Folder</string>
     </property>
    </widget>
    <widget class="QPlainTextEdit" name="logEdit">
@@ -296,7 +296,7 @@
     <property name="geometry">
      <rect>
       <x>560</x>
-      <y>0</y>
+      <y>10</y>
       <width>113</width>
       <height>32</height>
      </rect>

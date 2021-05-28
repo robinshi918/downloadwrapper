@@ -17,6 +17,12 @@ public:
 
 private:
     Ui::SettingsDialog *ui;
+
+private:
+    void initUi();
+
+private slots:
+    void onSelectDownloadPath();
 };
 
 #endif // SETTINGSDIALOG_H

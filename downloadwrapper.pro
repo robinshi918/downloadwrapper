@@ -13,12 +13,14 @@ SOURCES += \
     mainwindow.cpp \
     downloadstate.cpp \
     renamedialog.cpp \
+    settingmanager.cpp \
     settingsdialog.cpp
 
 HEADERS += \
     mainwindow.h \
     downloadstate.h \
     renamedialog.h \
+    settingmanager.h \
     settingsdialog.h
 
 FORMS += \

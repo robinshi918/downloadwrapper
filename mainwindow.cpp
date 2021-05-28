@@ -35,6 +35,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->cancelButton, &QPushButton::released, this, &MainWindow::handleCancelButton);
     connect(ui->startButton, &QPushButton::released, this, &MainWindow::handleStartButton);
     connect(ui->uploadButton, &QPushButton::released, this, &MainWindow::handleUploadButton);
+    connect(ui->settingsButton, &QPushButton::released, this, &MainWindow::handleSettingsButton);
     connect(ui->singleMusicRadioButton, &QRadioButton::clicked, this, &MainWindow::handleTypeSelected);
     connect(ui->playlistRadioButton, &QRadioButton::clicked, this, &MainWindow::handleTypeSelected);
     connect(ui->autoUploadCheck, &QCheckBox::stateChanged, this, &MainWindow::autoUploadStateChanged);
@@ -45,11 +46,16 @@ MainWindow::MainWindow(QWidget *parent)
 
 void MainWindow::initSettings()
 {
-    this->ftpPassword = DEFAULT_FTP_PASSWORD;
-    this->ftpUser = DEFAULT_FTP_USER_NAME;
-    this->ftpServer = DEFAULT_FTP_SERVER;
-    this->ftpRemotePath = DEFAULT_FTP_REMOTE_PATH;
-    this->ftpPort = DEFAULT_FTP_PORT;
+    QString settingFile = QApplication::applicationDirPath().left(1) + ":/setting.ini";
+    if (settings == NULL) {
+        settings = new QSettings(settingFile, QSettings::NativeFormat);
+    }
+
+    this->ftpPassword = settings->value("ftp_password", DEFAULT_FTP_PASSWORD).toString();
+    this->ftpUser = settings->value("ftp_user", DEFAULT_FTP_USER_NAME).toString();
+    this->ftpServer = settings->value("ftp_server", DEFAULT_FTP_SERVER).toString();
+    this->ftpRemotePath = settings->value("ftp_remote_path", DEFAULT_FTP_REMOTE_PATH).toString();
+    this->ftpPort = settings->value("ftp_port", DEFAULT_FTP_PORT).toString();
 }
 
 void MainWindow::onFocusChanged(QWidget* old, QWidget* newWidget)
@@ -129,6 +135,11 @@ void MainWindow::initUI() {
 void MainWindow::handleCancelButton()
 {
     ui->logEdit->clear();
+}
+
+
+void MainWindow::handleSettingsButton()
+{
     this->settingsDialog->show();
 }
 

@@ -1,9 +1,15 @@
 # downloadwrapper
+## Intro
+This is a project for my family's requirement of music listening. As almost we can find almost all the music resources from YouTube, I wrote this application to utilize the powerful youtube-dl tool. I hope this tool can help my family members to access the music resource in a convenient way.
+
+There are 2 servers needed: FTP and Subsoni which are supposed to be on same physical computer.
+
+
 ## Features
 
 - Download mp3 file from YouTube by calling youtube-dl
-- Upload the mp3 file to a FTP server
-- Force scan the media files on a Subsonic server
+- Upload downloaded mp3 file to a FTP server
+- Force Subsonic server to scan the new media, so this new mp3 music is available to Subsonic clients immediately.
 
 
 

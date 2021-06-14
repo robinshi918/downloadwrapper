@@ -69,4 +69,5 @@ QString SettingManager::getValue(QString key)
 void SettingManager::setValue(QString key, QString value)
 {
     settings->setValue(key, value);
+    settings->sync();
 }

@@ -4,6 +4,7 @@
 #include <QFileDialog>
 #include <QDir>
 #include <QCryptographicHash>
+#include <QDebug>
 
 SettingsDialog::SettingsDialog(QWidget *parent) :
     QDialog(parent),
@@ -90,6 +91,7 @@ QString SettingsDialog::md5(QString password)
     if (password.isEmpty()) return "";
     QString result = QString(QCryptographicHash::hash(QString("Hallo828c19b2d").toLocal8Bit(),QCryptographicHash::Md5).toHex());
     qInfo() << "md5 result of " + password << " = " << result;
+
     return result;
 }
 

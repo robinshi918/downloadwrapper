@@ -11,6 +11,7 @@ SettingsDialog::SettingsDialog(QWidget *parent) :
     ui(new Ui::SettingsDialog)
 {
     ui->setupUi(this);
+
     connectSetup();
 }
 
@@ -30,6 +31,7 @@ void SettingsDialog::connectSetup()
     connect(ui->pathSelectButton, &QPushButton::released, this, &SettingsDialog::onSelectDownloadPath);
     connect(ui->buttonBox, SIGNAL(accepted()), this, SLOT(onOkButton()));
     connect(ui->buttonBox, SIGNAL(rejected()), this, SLOT(onCancelButton()));
+    connect(ui->remotePathComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(onRemotePathComboBoxCurrentIndexChanged(int)));
 }
 
 void SettingsDialog::initUi()
@@ -38,7 +40,8 @@ void SettingsDialog::initUi()
 
     ui->ftpServerIP->setText(settings.getValue(SettingManager::KEY_FTP_SERVER));
     ui->ftpServerPort->setText(settings.getValue(SettingManager::KEY_FTP_PORT));
-    ui->ftpRemotePath->setText(settings.getValue(SettingManager::KEY_FTP_REMOTE_PATH));
+
+
     ui->ftpUser->setText(settings.getValue(SettingManager::KEY_FTP_USER));
     ui->ftpPasswd->setText(settings.getValue(SettingManager::KEY_FTP_PASSWORD));
 
@@ -49,6 +52,12 @@ void SettingsDialog::initUi()
     ui->subsonicSalt->setText(settings.getValue(SettingManager::KEY_SUBSONIC_SALT));
 
     ui->downloadPath->setText(settings.getValue(SettingManager::KEY_DOWNLOAD_FOLDER_PATH));
+
+
+    ui->ftpRemotePath->setText(settings.getValue(SettingManager::KEY_FTP_REMOTE_PATH));
+    int remotePathOption = settings.getValue(SettingManager::KEY_REMOTE_PATH_OPTION).toInt();
+    qInfo() << "saved remote path option = " << remotePathOption;
+    ui->remotePathComboBox->setCurrentIndex(remotePathOption);
 }
 
 void SettingsDialog::onSelectDownloadPath()
@@ -72,6 +81,8 @@ void SettingsDialog::onOkButton()
     settings.setValue(SettingManager::KEY_FTP_SERVER, ui->ftpServerIP->text());
     settings.setValue(SettingManager::KEY_FTP_PORT, ui->ftpServerPort->text());
     settings.setValue(SettingManager::KEY_FTP_REMOTE_PATH, ui->ftpRemotePath->text());
+    settings.setValue(SettingManager::KEY_REMOTE_PATH_OPTION, QString::number(ui->remotePathComboBox->currentIndex()));
+
     settings.setValue(SettingManager::KEY_FTP_USER, ui->ftpUser->text());
     settings.setValue(SettingManager::KEY_FTP_PASSWORD, ui->ftpPasswd->text());
 
@@ -98,4 +109,24 @@ QString SettingsDialog::md5(QString password)
 void SettingsDialog::onCancelButton()
 {
     emit cancelButtonClicked();
+}
+
+void SettingsDialog::onRemotePathComboBoxCurrentIndexChanged(int index)
+{
+    switch (index) {
+    case 0:
+        ui->ftpRemotePath->setText("music/mp3_Dora");
+        qInfo() << "set to Dora path";
+        break;
+    case 1:
+        ui->ftpRemotePath->setText("music/mp3_yuan");
+        qInfo() << "set to Yuan path";
+        break;
+    case 2:
+        ui->ftpRemotePath->setText("music/JulieSong");
+        qInfo() << "set to Julie path";
+        break;
+    default:
+        break;
+    }
 }

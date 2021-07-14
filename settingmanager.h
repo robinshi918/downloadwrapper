@@ -28,6 +28,7 @@ public:
     static const QString KEY_FTP_REMOTE_PATH;
     static const QString KEY_FTP_USER;
     static const QString KEY_FTP_PASSWORD;
+    static const QString KEY_REMOTE_PATH_OPTION;
 
     static const QString KEY_SUBSONIC_SERVER;
     static const QString KEY_SUBSONIC_PORT;

@@ -34,7 +34,7 @@
     <rect>
      <x>40</x>
      <y>40</y>
-     <width>331</width>
+     <width>401</width>
      <height>171</height>
     </rect>
    </property>
@@ -82,16 +82,6 @@
      <rect>
       <x>120</x>
       <y>60</y>
-      <width>191</width>
-      <height>21</height>
-     </rect>
-    </property>
-   </widget>
-   <widget class="QLineEdit" name="ftpRemotePath">
-    <property name="geometry">
-     <rect>
-      <x>120</x>
-      <y>90</y>
       <width>191</width>
       <height>21</height>
      </rect>
@@ -157,6 +147,52 @@
     </property>
     <property name="text">
      <string>FTP Password</string>
+    </property>
+   </widget>
+   <widget class="QComboBox" name="remotePathComboBox">
+    <property name="geometry">
+     <rect>
+      <x>120</x>
+      <y>90</y>
+      <width>81</width>
+      <height>26</height>
+     </rect>
+    </property>
+    <property name="editable">
+     <bool>false</bool>
+    </property>
+    <property name="currentText">
+     <string>Dora</string>
+    </property>
+    <item>
+     <property name="text">
+      <string>Dora</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>Yuan</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>Julie</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>Other</string>
+     </property>
+    </item>
+   </widget>
+   <widget class="QLineEdit" name="ftpRemotePath">
+    <property name="geometry">
+     <rect>
+      <x>200</x>
+      <y>91</y>
+      <width>151</width>
+      <height>21</height>
+     </rect>
     </property>
    </widget>
   </widget>

@@ -32,6 +32,7 @@ private slots:
     void onSelectDownloadPath();
     void onOkButton();
     void onCancelButton();
+    void onRemotePathComboBoxCurrentIndexChanged(int index);
 };
 
 #endif // SETTINGSDIALOG_H

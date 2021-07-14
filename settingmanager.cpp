@@ -17,8 +17,9 @@
 const QString SettingManager::KEY_FTP_SERVER = "ftp_server";
 const QString SettingManager::KEY_FTP_PORT ="ftp_port";
 const QString SettingManager::KEY_FTP_REMOTE_PATH="ftp_remote_path";
-const QString SettingManager::KEY_FTP_USER="ftp_user";
-const QString SettingManager::KEY_FTP_PASSWORD="ftp_password";
+const QString SettingManager::KEY_FTP_USER = "ftp_user";
+const QString SettingManager::KEY_FTP_PASSWORD = "ftp_password";
+const QString SettingManager::KEY_REMOTE_PATH_OPTION = "ftp_remote_path_option";
 // subsonic
 const QString SettingManager::KEY_SUBSONIC_SERVER="subsonic_server";
 const QString SettingManager::KEY_SUBSONIC_PORT="subsonic_port";
@@ -61,7 +62,9 @@ QString SettingManager::getValue(QString key)
         return settings->value(key, DEFAULT_SUBSONIC_SALT).toString();
     } else if (key == KEY_DOWNLOAD_FOLDER_PATH) {
         return settings->value(key, QDir::home().path() +  QDir::separator() + "Desktop/mp3/download/").toString();
-    }else {
+    } else if (key == KEY_REMOTE_PATH_OPTION) {
+        return settings->value(key, "").toString();
+    } else {
         return "value_not_exist for " + key;
     }
 }

@@ -18,6 +18,9 @@
 
 #define DOWNLOAD_PATTERN QString("%(title)s.%(ext)s")
 
+//#define YT_DOWNLOAD_CMD "/usr/local/bin/youtube-dl"
+#define YT_DOWNLOAD_CMD "/usr/local/bin/yt-dlp"
+
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -203,7 +206,7 @@ void MainWindow::downloadPlayList(QString &url, unsigned int startPos, unsigned 
                                   "--output",getDownloadFolder() + QDir::separator() + DOWNLOAD_PATTERN,
                                   url};
 
-    m_downloadProcess.start("/usr/local/bin/youtube-dl", arguments);
+    m_downloadProcess.start(YT_DOWNLOAD_CMD, arguments);
     ui->startButton->setEnabled(false);
     ui->startButton->setText("Downloading");
 }
@@ -221,7 +224,7 @@ void MainWindow::downloadSingle(QString &url)
     m_downloadFileFullPath = "";
     QStringList arguments{"-icw", "--extract-audio",  "--audio-format", "mp3", "--output",getDownloadFolder() + DOWNLOAD_PATTERN, url};
 
-    m_downloadProcess.start("/usr/local/bin/youtube-dl", arguments);
+    m_downloadProcess.start(YT_DOWNLOAD_CMD, arguments);
     ui->startButton->setEnabled(false);
     ui->startButton->setText("Downloading");
 }

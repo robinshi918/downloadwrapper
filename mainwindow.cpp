@@ -197,7 +197,7 @@ void MainWindow::downloadPlayList(QString &url, unsigned int startPos, unsigned 
         return;
     }
 
-    QStringList arguments{"-icw", "--extract-audio",
+    QStringList arguments{"-icw", "-x","--extract-audio",
                           "--playlist-start",
                           QString::number(startPos),
                                   "--playlist-end",
@@ -262,8 +262,8 @@ void MainWindow::onDownloadProgress() {
 
         if (stdout.contains("Deleting original file")) {
             return;
-        } else if (stdout.contains("[ffmpeg] Destination: ")) {
-            m_downloadFileFullPath = stdout.mid(QString("[ffmpeg] Destination: ").size());
+        } else if (stdout.contains("[ExtractAudio] Destination: ")) {
+            m_downloadFileFullPath = stdout.mid(QString("[ExtractAudio] Destination: ").size());
             m_downloadFileFullPath = m_downloadFileFullPath.mid(0, m_downloadFileFullPath.size() - 1);
             qInfo() << "downloaded file is:" << m_downloadFileFullPath;
             newState = DownloadState::STATE_CONVERTING;
@@ -372,6 +372,7 @@ void MainWindow::onFileRenameAccepted() {
 
     QString newFileFullPath = getDownloadFolder() + QDir::separator() + newFileName;
     qInfo() << "newFileFullPath" << newFileFullPath;
+    qInfo() << "downloadedFullPath" << m_downloadFileFullPath;
     if (!hasNewName || QFile::rename(m_downloadFileFullPath, newFileFullPath)) {
         printToOutput("File renamed to: " + newFileName);
         this->m_downloadFileFullPath = newFileFullPath;

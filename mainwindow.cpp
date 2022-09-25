@@ -10,6 +10,7 @@
 #include <QClipboard>
 #include <QApplication>
 #include <QDateTime>
+#include <QThread>
 #include <downloadstate.h>
 #include <renamedialog.h>
 #include <settingsdialog.h>
@@ -22,9 +23,9 @@
 #define USE_YT_DLP
 
 #ifdef USE_YT_DLP
-    #define YT_DOWNLOAD_CMD "/usr/local/bin/yt-dlp"
+#define YT_DOWNLOAD_CMD "/usr/local/bin/yt-dlp"
 #else
-    #define YT_DOWNLOAD_CMD "/usr/local/bin/youtube-dl"
+#define YT_DOWNLOAD_CMD "/usr/local/bin/youtube-dl"
 #endif
 
 
@@ -104,6 +105,12 @@ void MainWindow::connectSignals() {
 
     connect(m_renameDialog, SIGNAL(accepted()), this, SLOT(onFileRenameAccepted()));
     connect(m_renameDialog, SIGNAL(rejected()), this, SLOT(onFileRenameRejected()));
+
+    // user selection
+    connect(ui->remoteUserComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(onRemotePathComboBoxCurrentIndexChanged(int)));
+
+    // refresh user selection when setting dialog closes
+    connect(m_settingDialog, SIGNAL(finished(int)), this, SLOT(onSettingDialogFinished()));
 }
 
 void MainWindow::initUI() {
@@ -115,6 +122,11 @@ void MainWindow::initUI() {
     } else {
         ui->uploadButton->show();
     }
+
+    SettingManager& settings = SettingManager::getInstance();
+    int remoteUser = settings.getValue(SettingManager::KEY_REMOTE_PATH_OPTION).toInt();
+    ui->remoteUserComboBox->setCurrentIndex(remoteUser);
+//    onRemotePathComboBoxCurrentIndexChanged(remoteUser);
 }
 
 void MainWindow::handleCancelButton()
@@ -287,7 +299,7 @@ void MainWindow::handleYtDlpCommandOutput(QString& stdout) {
         printToOutput(DownloadState::stateToString(newState));
     }
 
-//    printToOutput(stdout);
+    //    printToOutput(stdout);
 }
 
 void MainWindow::handleYoutubeDlCommandOutput(QString& stdout) {
@@ -329,10 +341,10 @@ void MainWindow::onDownloadProgress() {
 
 
 #ifdef USE_YT_DLP
-    handleYtDlpCommandOutput(stdout);
+        handleYtDlpCommandOutput(stdout);
 #else
-    handleYoutubeDlCommandOutput((stdout);
-#endif
+        handleYoutubeDlCommandOutput((stdout);
+        #endif
 
 
     }
@@ -484,9 +496,9 @@ void MainWindow::publishSubsonic()
     };
     qInfo() << "subsonic param = " << arg.at(0);
 
-//    QStringList arguments{
-//        "http://192.168.1.21:4040/rest/startScan?u=admin&t=1d20736c96f8b965488b23b3edee8b14&s=c19b2d&v=1.16.1&c=robinapp&f=json"
-//    };
+    //    QStringList arguments{
+    //        "http://192.168.1.21:4040/rest/startScan?u=admin&t=1d20736c96f8b965488b23b3edee8b14&s=c19b2d&v=1.16.1&c=robinapp&f=json"
+    //    };
     m_publishProcess.start("/usr/bin/curl", arg);
 }
 
@@ -516,6 +528,47 @@ void MainWindow::onPublishFinish(int exitCode, QProcess::ExitStatus exitStatus)
         printToOutput("Publish to Subsonic server failed.");
         printToStatusBar("Publish to Subsonic server failed");
     }
+}
+
+void MainWindow::onRemotePathComboBoxCurrentIndexChanged(int index)
+{
+    SettingManager& settings = SettingManager::getInstance();
+
+    settings.setValue(SettingManager::KEY_REMOTE_PATH_OPTION, QString::number(index));
+
+    switch (index) {
+        case 0:
+            settings.setValue(SettingManager::KEY_FTP_REMOTE_PATH, "music/mp3_Dora");
+            qInfo() << "set to Dora path";
+            printToOutput("change to Dora");
+            break;
+        case 1:
+            settings.setValue(SettingManager::KEY_FTP_REMOTE_PATH, "music/mp3_yuan");
+            qInfo() << "set to Yuan path";
+            printToOutput("change to Yuan");
+            break;
+        case 2:
+            settings.setValue(SettingManager::KEY_FTP_REMOTE_PATH, "music/JulieSong");
+            qInfo() << "set to Julie path";
+            printToOutput("change to Julie");
+            break;
+        default:
+            qInfo() << "set to other paths";
+            printToOutput("change to Other person, Please go to Settings to set exact remote path!!");
+            break;
+    }
+
+}
+
+void MainWindow::onSettingDialogFinished() {
+
+    QThread::msleep(400);
+
+    SettingManager& settings = SettingManager::getInstance();
+    int remoteUser = settings.getValue(SettingManager::KEY_REMOTE_PATH_OPTION).toInt();
+    qInfo() << "setting dialog closed" << remoteUser;
+    ui->remoteUserComboBox->setCurrentIndex(remoteUser);
+
 }
 
 

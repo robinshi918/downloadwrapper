@@ -84,6 +84,36 @@
       <string>Play List</string>
      </property>
     </widget>
+    <widget class="QComboBox" name="remoteUserComboBox">
+     <property name="geometry">
+      <rect>
+       <x>270</x>
+       <y>30</y>
+       <width>104</width>
+       <height>26</height>
+      </rect>
+     </property>
+     <item>
+      <property name="text">
+       <string>Dora</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>Yuan</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>Julie</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>Other</string>
+      </property>
+     </item>
+    </widget>
    </widget>
    <widget class="QGroupBox" name="playListOptionGroup">
     <property name="geometry">

@@ -78,5 +78,8 @@ private slots:
     void onPublishProgress();
     void onPublishFinish(int exitCode, QProcess::ExitStatus exitStatus);
 
+    void onRemotePathComboBoxCurrentIndexChanged(int index);
+    void onSettingDialogFinished();
+
 };
 #endif // MAINWINDOW_H

@@ -38,6 +38,17 @@
      <height>21</height>
     </rect>
    </property>
+   <property name="font">
+    <font>
+     <family>.PingFang SC</family>
+    </font>
+   </property>
+   <property name="placeholderText">
+    <string notr="true"/>
+   </property>
+   <property name="clearButtonEnabled">
+    <bool>false</bool>
+   </property>
   </widget>
   <widget class="QLabel" name="label">
    <property name="geometry">

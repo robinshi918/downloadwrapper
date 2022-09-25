@@ -445,11 +445,8 @@ void MainWindow::onFileRenameAccepted() {
 
 void MainWindow::onFileRenameRejected() {
     qInfo() << "file rename rejected!";
-    if (ui->autoUploadCheck->checkState() == Qt::CheckState::Checked) {
-        uploadToFtp(m_downloadFileFullPath);
-    } else {
-        qInfo() << "skip uploading to ftp.....";
-    }
+    // if user click cancel button in rename dialog, do nothing.
+    printToOutput("Task Aborted!!");
 }
 
 // subsonic commands

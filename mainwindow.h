@@ -41,6 +41,9 @@ private:
     void handleUploadButton();
     void handleSettingsButton();
 
+    void handleYtDlpCommandOutput(QString& stdout);
+    void handleYoutubeDlCommandOutput(QString& stdout);
+
     void init();
     void connectSignals();
     void initUI();

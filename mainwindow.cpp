@@ -18,8 +18,14 @@
 
 #define DOWNLOAD_PATTERN QString("%(title)s.%(ext)s")
 
-//#define YT_DOWNLOAD_CMD "/usr/local/bin/youtube-dl"
-#define YT_DOWNLOAD_CMD "/usr/local/bin/yt-dlp"
+// check if which download command is used
+#define USE_YT_DLP
+
+#ifdef USE_YT_DLP
+    #define YT_DOWNLOAD_CMD "/usr/local/bin/yt-dlp"
+#else
+    #define YT_DOWNLOAD_CMD "/usr/local/bin/youtube-dl"
+#endif
 
 
 MainWindow::MainWindow(QWidget *parent)
@@ -190,6 +196,14 @@ void MainWindow::uploadToFtp(QString fileName) {
     m_uploadProcess.start("/usr/bin/curl", arguments);
 }
 
+/**
+ * TODO not completed yet
+ *
+ * @brief MainWindow::downloadPlayList
+ * @param url
+ * @param startPos
+ * @param endPos
+ */
 void MainWindow::downloadPlayList(QString &url, unsigned int startPos, unsigned int endPos)
 {
     if (startPos > endPos) {
@@ -224,6 +238,7 @@ void MainWindow::downloadSingle(QString &url)
     m_downloadFileFullPath = "";
     QStringList arguments{"-icw", "--extract-audio",  "--audio-format", "mp3", "--output",getDownloadFolder() + DOWNLOAD_PATTERN, url};
 
+    printToOutput("Starting.....");
     m_downloadProcess.start(YT_DOWNLOAD_CMD, arguments);
     ui->startButton->setEnabled(false);
     ui->startButton->setText("Downloading");
@@ -249,6 +264,60 @@ void MainWindow::printToStatusBar(QString str)
     ui->statusbar->showMessage(str);
 }
 
+
+void MainWindow::handleYtDlpCommandOutput(QString& stdout) {
+    int newState = DownloadState::STATE_NONE;
+
+
+    if (stdout.contains("Deleting original file")) {
+        return;
+    } else if (stdout.contains("[ExtractAudio] Destination:")) {
+        m_downloadFileFullPath = stdout.mid(QString("[ExtractAudio] Destination: ").size());
+        m_downloadFileFullPath = m_downloadFileFullPath.mid(0, m_downloadFileFullPath.size() - 1);
+        qInfo() << "downloaded file is:" << m_downloadFileFullPath;
+        newState = DownloadState::STATE_CONVERTING;
+    } else if (stdout.contains("[download]")) {
+        newState = DownloadState::STATE_DOWNLOADING;
+    } else if (stdout.contains("[youtube] ")) {
+        newState = DownloadState::STATE_PREPARING;
+    }
+
+    if (this->m_state != newState) {
+        this->m_state = newState;
+        printToOutput(DownloadState::stateToString(newState));
+    }
+
+//    printToOutput(stdout);
+}
+
+void MainWindow::handleYoutubeDlCommandOutput(QString& stdout) {
+    int newState = DownloadState::STATE_NONE;
+
+    if (stdout.contains("Deleting original file")) {
+        return;
+    } else if (stdout.contains("[ExtractAudio] Destination: ")) {
+        m_downloadFileFullPath = stdout.mid(QString("[ExtractAudio] Destination: ").size());
+        m_downloadFileFullPath = m_downloadFileFullPath.mid(0, m_downloadFileFullPath.size() - 1);
+        qInfo() << "downloaded file is:" << m_downloadFileFullPath;
+        newState = DownloadState::STATE_CONVERTING;
+    } else if (stdout.contains("[ffmpeg]")) {
+        newState = DownloadState::STATE_CONVERTING;
+    } else if (stdout.contains("[download]")) {
+        newState = DownloadState::STATE_DOWNLOADING;
+    } else if (stdout.contains("[youtube] ")) {
+        newState = DownloadState::STATE_PREPARING;
+    }
+
+    if (this->m_state != newState) {
+        this->m_state = newState;
+        printToOutput(DownloadState::stateToString(newState));
+    }
+}
+
+/**
+ * Receive and parse command output
+ * @brief MainWindow::onDownloadProgress
+ */
 void MainWindow::onDownloadProgress() {
     QString stdout = m_downloadProcess.readAllStandardOutput();
     QString stderr = m_downloadProcess.readAllStandardError();
@@ -258,27 +327,14 @@ void MainWindow::onDownloadProgress() {
         // always print to status bar
         printToStatusBar(stdout);
 
-        int newState = DownloadState::STATE_NONE;
 
-        if (stdout.contains("Deleting original file")) {
-            return;
-        } else if (stdout.contains("[ExtractAudio] Destination: ")) {
-            m_downloadFileFullPath = stdout.mid(QString("[ExtractAudio] Destination: ").size());
-            m_downloadFileFullPath = m_downloadFileFullPath.mid(0, m_downloadFileFullPath.size() - 1);
-            qInfo() << "downloaded file is:" << m_downloadFileFullPath;
-            newState = DownloadState::STATE_CONVERTING;
-        } else if (stdout.contains("[ffmpeg]")) {
-            newState = DownloadState::STATE_CONVERTING;
-        } else if (stdout.contains("[download]")) {
-            newState = DownloadState::STATE_DOWNLOADING;
-        } else if (stdout.contains("[youtube] ")) {
-            newState = DownloadState::STATE_PREPARING;
-        }
+#ifdef USE_YT_DLP
+    handleYtDlpCommandOutput(stdout);
+#else
+    handleYoutubeDlCommandOutput((stdout);
+#endif
 
-        if (this->m_state != newState) {
-            this->m_state = newState;
-            printToOutput(DownloadState::stateToString(newState));
-        }
+
     }
 
     if (stderr.size() > 0) {

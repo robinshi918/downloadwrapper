@@ -53,11 +53,11 @@ void SettingsDialog::initUi()
 
     ui->downloadPath->setText(settings.getValue(SettingManager::KEY_DOWNLOAD_FOLDER_PATH));
 
-
     ui->ftpRemotePath->setText(settings.getValue(SettingManager::KEY_FTP_REMOTE_PATH));
     int remotePathOption = settings.getValue(SettingManager::KEY_REMOTE_PATH_OPTION).toInt();
     qInfo() << "saved remote path option = " << remotePathOption;
     ui->remotePathComboBox->setCurrentIndex(remotePathOption);
+    onRemotePathComboBoxCurrentIndexChanged(remotePathOption);
 }
 
 void SettingsDialog::onSelectDownloadPath()

@@ -1,6 +1,6 @@
 # downloadwrapper
 ## Intro
-This is a project for my family's requirement of music listening. As almost we can find almost all the music resources from YouTube, I wrote this application to utilize the powerful youtube-dl tool. I hope this tool can help my family members to access the music resource in a convenient way.
+This is a project for my family's requirement of music listening. As mostly we can find almost all the music resources from YouTube, I wrote this application to utilize the powerful youtube-dl tool. I hope this tool can help my family members to access the music resource in a convenient way. 
 
 There are 2 servers needed: FTP and Subsoni which are supposed to be on same physical computer.
 

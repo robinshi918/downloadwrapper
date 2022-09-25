@@ -252,7 +252,7 @@ void MainWindow::printToOutput(QString str, bool printTimestamp)
 
     if (printTimestamp) {
         QDateTime date = QDateTime::currentDateTime();
-        QString formattedTime = date.toString("yyyy.MM.dd hh:mm:ss");
+        QString formattedTime = date.toString("MM.dd hh:mm:ss");
         ui->logEdit->appendPlainText(formattedTime + "   " + str);
     } else {
         ui->logEdit->appendPlainText(str);

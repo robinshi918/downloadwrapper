@@ -12,7 +12,8 @@
 SettingsDialog::SettingsDialog(QWidget *parent) :
     QDialog(parent),
     ui(new Ui::SettingsDialog),
-    m_ftpProcess(nullptr)
+    m_ftpProcess(nullptr),
+    m_directoryListProcess(nullptr)
 {
     ui->setupUi(this);
 
@@ -24,6 +25,10 @@ SettingsDialog::~SettingsDialog()
     if (m_ftpProcess) {
         m_ftpProcess->kill();
         delete m_ftpProcess;
+    }
+    if (m_directoryListProcess) {
+        m_directoryListProcess->kill();
+        delete m_directoryListProcess;
     }
     delete ui;
 }
@@ -41,6 +46,7 @@ void SettingsDialog::connectSetup()
     connect(ui->buttonBox, SIGNAL(rejected()), this, SLOT(onCancelButton()));
     connect(ui->remotePathComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(onRemotePathComboBoxCurrentIndexChanged(int)));
     connect(ui->createFolderButton, &QPushButton::released, this, &SettingsDialog::onCreateFolderButton);
+    connect(ui->loadDirectoriesButton, &QPushButton::released, this, &SettingsDialog::onLoadDirectoriesButton);
 }
 
 void SettingsDialog::initUi()
@@ -120,24 +126,19 @@ void SettingsDialog::onCancelButton()
     emit cancelButtonClicked();
 }
 
-void SettingsDialog::onRemotePathComboBoxCurrentIndexChanged(int index)
+void SettingsDialog::onRemotePathComboBoxCurrentIndexChanged(int /*index*/)
 {
-    switch (index) {
-    case 0:
-        ui->ftpRemotePath->setText("music/mp3_Dora");
-        qInfo() << "set to Dora path";
-        break;
-    case 1:
-        ui->ftpRemotePath->setText("music/mp3_yuan");
-        qInfo() << "set to Yuan path";
-        break;
-    case 2:
-        ui->ftpRemotePath->setText("music/JulieSong");
-        qInfo() << "set to Julie path";
-        break;
-    default:
-        break;
+    QString currentText = ui->remotePathComboBox->currentText();
+    
+    if (currentText == "Other") {
+        // Keep the current text in the line edit, don't change it
+        qInfo() << "User selected Other, keeping current path";
+        return;
     }
+    
+    // Set the selected directory path
+    ui->ftpRemotePath->setText(currentText);
+    qInfo() << "set to path:" << currentText;
 }
 
 void SettingsDialog::onCreateFolderButton()
@@ -236,4 +237,114 @@ void SettingsDialog::onFtpProcessFinished(int exitCode, QProcess::ExitStatus exi
         delete m_ftpProcess;
         m_ftpProcess = nullptr;
     }
+}
+
+void SettingsDialog::onLoadDirectoriesButton()
+{
+    loadFtpDirectories();
+}
+
+void SettingsDialog::loadFtpDirectories()
+{
+    // Get FTP settings
+    SettingManager& settings = SettingManager::getInstance();
+    QString ftpPassword = settings.getValue(SettingManager::KEY_FTP_PASSWORD);
+    QString ftpUser = settings.getValue(SettingManager::KEY_FTP_USER);
+    QString ftpServer = settings.getValue(SettingManager::KEY_FTP_SERVER);
+    QString ftpPort = settings.getValue(SettingManager::KEY_FTP_PORT);
+    
+    // Disable the button while loading directories
+    ui->loadDirectoriesButton->setEnabled(false);
+    ui->loadDirectoriesButton->setText("Loading...");
+    
+    // Create FTP process to list directories
+    if (m_directoryListProcess) {
+        m_directoryListProcess->kill();
+        delete m_directoryListProcess;
+    }
+    
+    m_directoryListProcess = new QProcess(this);
+    connect(m_directoryListProcess, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
+            this, &SettingsDialog::onDirectoryListProcessFinished);
+    
+    // Use curl to list directories in the music folder
+    QStringList arguments{
+        "-l",
+        "-u", ftpUser + ":" + ftpPassword,
+        "ftp://" + ftpServer + ":" + ftpPort + "/music/"
+    };
+    
+    qInfo() << "Loading FTP directories from music folder";
+    m_directoryListProcess->start("/usr/bin/curl", arguments);
+}
+
+void SettingsDialog::onDirectoryListProcessFinished(int exitCode, QProcess::ExitStatus exitStatus)
+{
+    // Re-enable the button
+    ui->loadDirectoriesButton->setEnabled(true);
+    ui->loadDirectoriesButton->setText("Load Directories");
+    
+    if (exitStatus == QProcess::NormalExit && exitCode == 0) {
+        QString output = m_directoryListProcess->readAllStandardOutput();
+        QStringList directories = parseFtpDirectoryList(output);
+        
+        if (!directories.isEmpty()) {
+            // Clear existing items and add new ones
+            ui->remotePathComboBox->clear();
+            
+            // Add the loaded directories
+            for (const QString& dir : directories) {
+                ui->remotePathComboBox->addItem(dir);
+            }
+            
+            // Add "Other" option at the end
+            ui->remotePathComboBox->addItem("Other");
+            
+            QMessageBox::information(this, "Success", 
+                QString("Loaded %1 directories from FTP server.").arg(directories.size()));
+            qInfo() << "FTP directories loaded successfully:" << directories;
+        } else {
+            QMessageBox::warning(this, "Warning", "No directories found in the music folder.");
+        }
+    } else {
+        QString errorMessage = "Failed to load directories from FTP server.\n";
+        if (m_directoryListProcess) {
+            QString errorOutput = m_directoryListProcess->readAllStandardError();
+            if (!errorOutput.isEmpty()) {
+                errorMessage += "Error: " + errorOutput;
+            }
+        }
+        QMessageBox::warning(this, "Error", errorMessage);
+        qWarning() << "Failed to load FTP directories, exit code:" << exitCode;
+    }
+    
+    // Clean up process
+    if (m_directoryListProcess) {
+        delete m_directoryListProcess;
+        m_directoryListProcess = nullptr;
+    }
+}
+
+QStringList SettingsDialog::parseFtpDirectoryList(const QString& output)
+{
+    QStringList directories;
+    QStringList lines = output.split('\n', Qt::SkipEmptyParts);
+    
+    for (const QString& line : lines) {
+        QString trimmedLine = line.trimmed();
+        // Skip empty lines, progress lines, and files (we only want directories)
+        if (!trimmedLine.isEmpty() && 
+            !trimmedLine.startsWith("%") && 
+            !trimmedLine.startsWith("Total") &&
+            !trimmedLine.startsWith("Dload") &&
+            !trimmedLine.startsWith("Speed") &&
+            !trimmedLine.startsWith("--:--") &&
+            !trimmedLine.contains('.') &&
+            !trimmedLine.endsWith(".sh")) {
+            // Add the directory with music/ prefix
+            directories.append("music/" + trimmedLine);
+        }
+    }
+    
+    return directories;
 }

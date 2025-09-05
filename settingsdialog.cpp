@@ -5,10 +5,14 @@
 #include <QDir>
 #include <QCryptographicHash>
 #include <QDebug>
+#include <QMessageBox>
+#include <QInputDialog>
+#include "foldernamedialog.h"
 
 SettingsDialog::SettingsDialog(QWidget *parent) :
     QDialog(parent),
-    ui(new Ui::SettingsDialog)
+    ui(new Ui::SettingsDialog),
+    m_ftpProcess(nullptr)
 {
     ui->setupUi(this);
 
@@ -17,6 +21,10 @@ SettingsDialog::SettingsDialog(QWidget *parent) :
 
 SettingsDialog::~SettingsDialog()
 {
+    if (m_ftpProcess) {
+        m_ftpProcess->kill();
+        delete m_ftpProcess;
+    }
     delete ui;
 }
 
@@ -32,6 +40,7 @@ void SettingsDialog::connectSetup()
     connect(ui->buttonBox, SIGNAL(accepted()), this, SLOT(onOkButton()));
     connect(ui->buttonBox, SIGNAL(rejected()), this, SLOT(onCancelButton()));
     connect(ui->remotePathComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(onRemotePathComboBoxCurrentIndexChanged(int)));
+    connect(ui->createFolderButton, &QPushButton::released, this, &SettingsDialog::onCreateFolderButton);
 }
 
 void SettingsDialog::initUi()
@@ -128,5 +137,103 @@ void SettingsDialog::onRemotePathComboBoxCurrentIndexChanged(int index)
         break;
     default:
         break;
+    }
+}
+
+void SettingsDialog::onCreateFolderButton()
+{
+    // Show dialog to get folder name
+    FolderNameDialog dialog(this);
+    if (dialog.exec() == QDialog::Accepted) {
+        QString folderName = dialog.getFolderName();
+        if (!folderName.isEmpty()) {
+            createFtpFolder(folderName);
+        }
+    }
+}
+
+void SettingsDialog::createFtpFolder(const QString &folderName)
+{
+    // Get FTP settings
+    SettingManager& settings = SettingManager::getInstance();
+    QString ftpPassword = settings.getValue(SettingManager::KEY_FTP_PASSWORD);
+    QString ftpUser = settings.getValue(SettingManager::KEY_FTP_USER);
+    QString ftpServer = settings.getValue(SettingManager::KEY_FTP_SERVER);
+    QString ftpRemotePath = settings.getValue(SettingManager::KEY_FTP_REMOTE_PATH);
+    QString ftpPort = settings.getValue(SettingManager::KEY_FTP_PORT);
+    
+    // Create the full path for the new folder
+    QString fullPath = ftpRemotePath + "/" + folderName;
+    
+    // Disable the button while creating folder
+    ui->createFolderButton->setEnabled(false);
+    ui->createFolderButton->setText("Creating...");
+    
+    // Create FTP process to make directory
+    if (m_ftpProcess) {
+        m_ftpProcess->kill();
+        delete m_ftpProcess;
+    }
+    
+    m_ftpProcess = new QProcess(this);
+    connect(m_ftpProcess, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
+            this, &SettingsDialog::onFtpProcessFinished);
+    
+    // Use curl to create directory via FTP
+    QStringList arguments{
+        "-Q", "MKD " + fullPath,
+        "-u", ftpUser + ":" + ftpPassword,
+        "ftp://" + ftpServer + ":" + ftpPort + "/"
+    };
+    
+    qInfo() << "Creating FTP folder:" << fullPath;
+    m_ftpProcess->start("/usr/bin/curl", arguments);
+}
+
+void SettingsDialog::onFtpProcessFinished(int exitCode, QProcess::ExitStatus exitStatus)
+{
+    // Re-enable the button
+    ui->createFolderButton->setEnabled(true);
+    ui->createFolderButton->setText("Create New Folder");
+    
+    if (exitStatus == QProcess::NormalExit && exitCode == 0) {
+        QMessageBox::information(this, "Success", "Folder created successfully on FTP server!");
+        qInfo() << "FTP folder created successfully";
+    } else {
+        QString errorMessage = "Failed to create folder on FTP server.\n";
+        QString errorOutput;
+        
+        if (m_ftpProcess) {
+            errorOutput = m_ftpProcess->readAllStandardError();
+            QString standardOutput = m_ftpProcess->readAllStandardOutput();
+            
+            // Check for specific error conditions
+            if (errorOutput.contains("550") || standardOutput.contains("550")) {
+                errorMessage = "Folder already exists on FTP server.\nPlease choose a different name.";
+            } else if (errorOutput.contains("QUOT command failed")) {
+                errorMessage = "FTP server rejected the command.\nThis might be due to:\n"
+                             "- Folder already exists\n"
+                             "- Insufficient permissions\n"
+                             "- Invalid folder name";
+            } else if (!errorOutput.isEmpty()) {
+                errorMessage += "Error: " + errorOutput;
+            } else {
+                errorMessage += "Unknown error occurred (exit code: " + QString::number(exitCode) + ")";
+            }
+        } else {
+            errorMessage += "Unknown error occurred (exit code: " + QString::number(exitCode) + ")";
+        }
+        
+        QMessageBox::warning(this, "Error", errorMessage);
+        qWarning() << "Failed to create FTP folder, exit code:" << exitCode;
+        if (!errorOutput.isEmpty()) {
+            qWarning() << "Error output:" << errorOutput;
+        }
+    }
+    
+    // Clean up process
+    if (m_ftpProcess) {
+        delete m_ftpProcess;
+        m_ftpProcess = nullptr;
     }
 }

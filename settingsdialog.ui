@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>533</width>
-    <height>521</height>
+    <height>551</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -29,15 +29,15 @@
     <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
    </property>
   </widget>
-  <widget class="QGroupBox" name="groupBox">
-   <property name="geometry">
-    <rect>
-     <x>40</x>
-     <y>40</y>
-     <width>401</width>
-     <height>171</height>
-    </rect>
-   </property>
+     <widget class="QGroupBox" name="groupBox">
+    <property name="geometry">
+     <rect>
+      <x>40</x>
+      <y>40</y>
+      <width>401</width>
+      <height>201</height>
+     </rect>
+    </property>
    <property name="title">
     <string>FTP</string>
    </property>
@@ -195,16 +195,29 @@
      </rect>
     </property>
    </widget>
+   <widget class="QPushButton" name="createFolderButton">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>180</y>
+      <width>120</width>
+      <height>32</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Create New Folder</string>
+    </property>
+   </widget>
   </widget>
-  <widget class="QGroupBox" name="groupBox_2">
-   <property name="geometry">
-    <rect>
-     <x>40</x>
-     <y>230</y>
-     <width>331</width>
-     <height>181</height>
-    </rect>
-   </property>
+     <widget class="QGroupBox" name="groupBox_2">
+    <property name="geometry">
+     <rect>
+      <x>40</x>
+      <y>260</y>
+      <width>331</width>
+      <height>181</height>
+     </rect>
+    </property>
    <property name="title">
     <string>Subsonic</string>
    </property>
@@ -330,15 +343,15 @@
     </property>
    </widget>
   </widget>
-  <widget class="QGroupBox" name="groupBox_3">
-   <property name="geometry">
-    <rect>
-     <x>40</x>
-     <y>420</y>
-     <width>461</width>
-     <height>71</height>
-    </rect>
-   </property>
+     <widget class="QGroupBox" name="groupBox_3">
+    <property name="geometry">
+     <rect>
+      <x>40</x>
+      <y>450</y>
+      <width>461</width>
+      <height>71</height>
+     </rect>
+    </property>
    <property name="title">
     <string>Download</string>
    </property>

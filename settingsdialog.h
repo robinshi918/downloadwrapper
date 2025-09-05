@@ -2,6 +2,7 @@
 #define SETTINGSDIALOG_H
 
 #include <QDialog>
+#include <QProcess>
 
 namespace Ui {
 class SettingsDialog;
@@ -22,17 +23,21 @@ Q_SIGNALS:
 
 private:
     Ui::SettingsDialog *ui;
+    QProcess *m_ftpProcess;
 
 private:
     void initUi();
     void connectSetup();
     QString md5(QString password);
+    void createFtpFolder(const QString &folderName);
 
 private slots:
     void onSelectDownloadPath();
     void onOkButton();
     void onCancelButton();
     void onRemotePathComboBoxCurrentIndexChanged(int index);
+    void onCreateFolderButton();
+    void onFtpProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
 };
 
 #endif // SETTINGSDIALOG_H

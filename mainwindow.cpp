@@ -23,7 +23,7 @@
 #define USE_YT_DLP
 
 #ifdef USE_YT_DLP
-#define YT_DOWNLOAD_CMD "/usr/local/bin/yt-dlp"
+#define YT_DOWNLOAD_CMD "/opt/homebrew/bin/yt-dlp"
 #else
 #define YT_DOWNLOAD_CMD "/usr/local/bin/youtube-dl"
 #endif
@@ -240,7 +240,7 @@ void MainWindow::downloadPlayList(QString &url, unsigned int startPos, unsigned 
 void MainWindow::injectEnvironmentVar()
 {
     QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
-    env.insert("PATH", env.value("PATH") + ":/usr/local/opt/openjdk/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/share/dotnet:~/.dotnet/tools:/Library/Apple/usr/bin:/Users/robinshi/Library/Android/sdk/platform-tools/");
+    env.insert("PATH", env.value("PATH") + ":/usr/local/opt/openjdk/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/share/dotnet:~/.dotnet/tools:/Library/Apple/usr/bin:/Users/robinshi/Library/Android/sdk/platform-tools/");
     m_downloadProcess.setProcessEnvironment(env);
     m_uploadProcess.setProcessEnvironment(env);
 }
@@ -248,7 +248,7 @@ void MainWindow::injectEnvironmentVar()
 void MainWindow::downloadSingle(QString &url)
 {
     m_downloadFileFullPath = "";
-    QStringList arguments{"-icw", "--extract-audio",  "--audio-format", "mp3", "--output",getDownloadFolder() + DOWNLOAD_PATTERN, url};
+    QStringList arguments{"-icw", "--extract-audio",  "--audio-format", "mp3", "--output", getDownloadFolder() + DOWNLOAD_PATTERN, url};
 
     printToOutput("Starting.....");
     m_downloadProcess.start(YT_DOWNLOAD_CMD, arguments);
@@ -426,7 +426,7 @@ void MainWindow::autoUploadStateChanged(int state) {
 
 QString MainWindow::getDownloadFolder()
 {
-    return m_setting->getValue(SettingManager::KEY_DOWNLOAD_FOLDER_PATH);
+    return m_setting->getValue(SettingManager::KEY_DOWNLOAD_FOLDER_PATH) + QDir::separator();
 }
 
 void MainWindow::onFileRenameAccepted() {

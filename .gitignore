@@ -53,3 +53,4 @@ compile_commands.json
 
 # test files
 *.mp3
+build/*
